@@ -11,6 +11,8 @@
 <script type="text/javascript" src="/static/admin/js/calendar.js"></script>
 <script type="text/javascript" src="/static/admin/js/admin/DateTimeShortcuts.js"></script>
 
+<link rel="stylesheet" type="text/css" href="/static/HYHR/css/paginator.css" />
+
 <h2> {{title}}</h2>
 
 <div class="container">
@@ -114,24 +116,47 @@
                 {% endfor %}
             </tbody>
         </table>
-                           
-       
-        <div class="pagination">
-            <span class="step-links">
-                {% if result.has_previous%}
-                <a href="#" onclick="navigatetopagewithQuery(1)">&laquo;</a>
-                <a href="#" onclick="navigatetopagewithQuery({{result.previous_page_number}})">&lt;</a>
-                {% endif %}
-                <span class="current">
-                    Page {{result.number}} of {{result.paginator.num_pages}}
-                </span>
+         <table>
+             <tbody>
+                 <tr>
+                     <td style="width:5%">
+                        <select id="pagecount" onchange="pageCountChange()">
+                            <option value="1">1</option>
+                            <option value="15">15</option>
+                            <option value="30">30</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                     </td>
+                     <td style="width:85%; text-align:center">
+                        <span >
+                            {% if result.has_previous%}
+                            <a href="#" onclick="navigatetopagewithQuery(1)"><span class="glyphicon glyphicon-fast-backward"></span></a>
+                            <a href="#" onclick="navigatetopagewithQuery({{result.previous_page_number}})"><span class="glyphicon glyphicon-backward"></span></a>
+                            {% endif %}
+                            <span>
+                                Page {{result.number}} of {{result.paginator.num_pages}}
+                            </span>
+            
+                            {% if result.has_next %}
+                                <a href="#" onclick="navigatetopagewithQuery({{result.next_page_number}})"><span class="glyphicon glyphicon-forward"></span></a>
+                            <a href="#" onclick="navigatetopagewithQuery({{result.paginator.num_pages}})"><span class="glyphicon glyphicon-fast-forward"></a>
+                            {%endif%}
+                            
+                        </span>
+                     </td>
+                     <td style="width:10%">
+                        <span >Total {{result.paginator.count}} items</span>
+                     </td>
+                 </tr>
+             </tbody>
+         </table>                  
+           
 
-                {% if result.has_next %}
-                    <a href="#" onclick="navigatetopagewithQuery({{result.next_page_number}})">&gt;</a>
-                <a href="#" onclick="navigatetopagewithQuery({{result.paginator.num_pages}})">&raquo;</a>
-                {%endif%}
-            </span>
-        </div>
+        
+            
+            
+        
 
         {%else%}
         {% if form.errors %}
@@ -141,13 +166,7 @@
         {% endif %}
         
         {%endif%}
-        <select id="pagecount" onchange="pageCountChange()">
-                <option value="2">15</option>
-                <option value="15">15*</option>
-                <option value="30">30</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-            </select>   
+        
     </div>
 </div>
 {% endblock %}

@@ -1,0 +1,14 @@
+.pagination
+{
+    font-size:14px;
+    padding-left: 100px;
+    text-align: center;
+
+    
+}
+
+.total_count_span
+{
+    float:right;
+    padding-right:20px;
+}
