@@ -1,0 +1,189 @@
+﻿{% extends "HYHR/layout.html" %}
+
+{% block content %}
+<link rel="stylesheet" type="text/css" href="/static/admin/css/base.css" /> 
+<link rel="stylesheet" type="text/css" href="/static/admin/css/forms.css" /> 
+<script type="text/javascript" src="/admin/jsi18n/"></script>
+<script type="text/javascript" src="/static/admin/js/core.js"></script>
+<script type="text/javascript" src="/static/admin/js/vendor/jquery/jquery.js"></script>
+<script type="text/javascript" src="/static/admin/js/jquery.init.js"></script>
+
+<script type="text/javascript" src="/static/admin/js/calendar.js"></script>
+<script type="text/javascript" src="/static/admin/js/admin/DateTimeShortcuts.js"></script>
+
+<h2> {{title}}</h2>
+
+<div class="container">
+    <div class="row">
+        <form class="form-horizontal" role="form" action="." method="get">
+            {% csrf_token %}
+            {% if next %}
+                <input type="hidden" name="next" value="{{ next }}">
+            {% else %}
+                <input type="hidden" name="next" value="/">
+            {% endif %}
+
+            <div class="form-group">
+                <label for="name" class="col-sm-2 control-label">Name: </label>
+                <div class="col-sm-2">
+                    {{form.name}}
+                    {%for field in form%}{% if field.name == 'name' %}<label class="validation-summary-errors">{%for error in field.errors%}{{error}}{%endfor%}</label>{%endif%}{%endfor%}
+                </div>
+
+                <label for="pid" class="col-sm-2 control-label">PID: </label>
+                <div class="col-sm-2">
+                    {{form.pid}}                   
+                    {%for field in form%}{% if field.name == 'pid' %}<label class="validation-summary-errors">{%for error in field.errors%}{{error}}{%endfor%}</label>{%endif%}{%endfor%}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#extrainfo" style="margin-bottom:20px">
+                        Click to do advanced query...
+                    </button>
+                </div>
+                <div>
+                    <div id="extrainfo" class="collapse in">
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label" for="dateFrom">From: </label>
+                            <div class="col-sm-2" >
+                                {{form.dateFrom}} 
+                                {%for field in form%}{% if field.name == 'dateFrom' %}<label class="validation-summary-errors">{%for error in field.errors%}{{error}}{%endfor%}</label>{%endif%}{%endfor%}
+                            </div>
+
+                            <label class="col-sm-2 control-label" for="dateTo">To: </label>
+                            <div class="col-sm-2">
+                                {{form.dateTo}}
+                                {%for field in form%}{% if field.name == 'dateTo' %}<label class="validation-summary-errors">{%for error in field.errors%}{{error}}{%endfor%}</label>{%endif%}{%endfor%}
+                            </div>
+                       </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <button type="button" class="btn btn-primary" onclick="navigatetopagewithQuery(1)">Query</button>
+                    <input type="hidden" id="page_count" name="page_count" />
+                    <input type="hidden" id="page_id" name="page_id" />
+                    <input type="hidden" id="collapse" name="collapse" />
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="row">
+        <hr />
+        {% if result %}
+        <table class="table table-hover">
+            <caption>Query result...</caption>
+            <thead>
+                <tr>
+                    <th>name</th>
+                    <th>pid</th>
+                    <th>phone</th>
+                    <th>productname</th>
+                    <th>district</th>
+                    <th>C/R</th>
+                    <th>baseline</th>
+
+                    <th>totalprice</th>
+                    <th>from</th>
+                    <th>to</th>
+                    <th>ReOrder?</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rst in result %}
+                    <tr>
+                        <td>{{rst.customer.name}}</td>
+                        <td>{{rst.customer.pid}}</td>
+                        <td>{{rst.customer.phone}}</td>
+                        <td>{{rst.product.name}}</td>
+                        <td>{{rst.customer.get_district_display}}</td>
+                        <td>{{rst.customer.get_hukou_display}}</td>
+                        <td>{{rst.product_base}}</td>
+                        
+           
+                        <td>{{rst.total_price}}</td>
+                        <td>{{rst.validFrom.year}}-{{rst.validFrom.month|stringformat:"02d"}}-{{rst.validFrom.day|stringformat:"02d"}}</td>
+                        <td>{{rst.validTo.year}}-{{rst.validTo.month|stringformat:"02d"}}-{{rst.validTo.day|stringformat:"02d"}}</td>
+                        <td><a href="/sb/reorder/{{rst.customer.pid}}">Reorder</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+                           
+       
+        <div class="pagination">
+            <span class="step-links">
+                {% if result.has_previous%}
+                <a href="#" onclick="navigatetopagewithQuery(1)">&laquo;</a>
+                <a href="#" onclick="navigatetopagewithQuery({{result.previous_page_number}})">&lt;</a>
+                {% endif %}
+                <span class="current">
+                    Page {{result.number}} of {{result.paginator.num_pages}}
+                </span>
+
+                {% if result.has_next %}
+                    <a href="#" onclick="navigatetopagewithQuery({{result.next_page_number}})">&gt;</a>
+                <a href="#" onclick="navigatetopagewithQuery({{result.paginator.num_pages}})">&raquo;</a>
+                {%endif%}
+            </span>
+        </div>
+
+        {%else%}
+        {% if form.errors %}
+            <p class="validation-summary-errors">Errors met during the Query, make sure you enter all the field correctly and try again.</p>
+        {%else%}
+            <p>No result found.</p>
+        {% endif %}
+        
+        {%endif%}
+        <select id="pagecount" onchange="pageCountChange()">
+                <option value="2">15</option>
+                <option value="15">15*</option>
+                <option value="30">30</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>   
+    </div>
+</div>
+{% endblock %}
+{% block scripts%}
+
+<script type="text/javascript">
+$(document).ready(function () {
+    $('#pagecount').val('{{pagecount}}');
+    $('#collapse').val('{{collapse}}');
+    if ('{{collapse}}'=='0')
+    {
+        $('#extrainfo').collapse('show');
+    }
+    else
+    {
+        $('#extrainfo').collapse('hide');
+    }
+    $('#extrainfo').on('show.bs.collapse', function(){
+        $('#collapse').val('0');
+    });
+    $('#extrainfo').on('hide.bs.collapse', function(){
+        $('#collapse').val('1');
+    });
+});
+
+function pageCountChange()
+{
+   $('#page_count').val($('#pagecount').val());
+   $('form').submit();
+}
+function navigatetopagewithQuery(pageid)
+{
+    $('#page_id').val(pageid);
+    $('#page_count').val($('#pagecount').val());
+    $('form').submit();
+}
+</script>
+
+{%endblock%}

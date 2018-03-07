@@ -1,0 +1,108 @@
+{% extends 'HYHR/layout.html' %}
+
+{% block headScripts%}
+<script>
+    function validateForm() {
+        var pswd = document.getElementsByName('password').value;
+        var con_pswd = document.getElementsByName('confirm-password').value;
+        alert(pswd + con_pswd)
+        if (pswd != con_pswd)
+            return false;
+
+    }
+</script>
+{% endblock %}
+
+{% block content %}
+
+<div class="container">
+    <div class="row">
+        <div class="col-xs-10 col-xs-offset-2">
+            <h2>{{title}}</h2>
+        </div>
+    </div>
+    <hr/>
+<div class="row">
+
+    <form name="regsterForm" class="form-horizontal" action="." method="post" role="form">
+        {% csrf_token %}
+        {% if form.errors %}
+            <p style="color:red;"> Please enter valid info. {{form.errors}}</p>
+        {% endif %}
+        {% if next %}
+            <input type="hidden" name="next" value="{{ next }}">
+        {% else %}
+            <input type="hidden" name="next" value="/">
+        {% endif %}
+
+        <div class="form-group">
+            <label for="username" class="col-xs-2 control-label">User Name: </label>
+            <div class="col-xs-4" >
+                <input type="text" class="form-control" name="username" id="username" placeholder="user name" required autofocus>
+            </div>
+            <div class="col-xs-6">
+                <label style="color: red;">*</label>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="password" class="col-xs-2 control-label">Password: </label>
+            <div class="col-xs-4">
+                <input type="password" class="form-control" id="password" name="password" placeholder="password" required>
+            </div>
+            <div class="col-xs-6">
+                <label style="color: red;">*</label>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="confirm-password" class="col-xs-2 control-label">Confirm Password: </label>
+            <div class="col-xs-4">
+                <input type="password" class="form-control" id="confirm-password" name="confirm-password"
+                       placeholder="enter the password again." required>
+            </div>
+            <div class="col-xs-6">
+                <label style="color: red;">*</label>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-xs-offset-2 col-xs-10">
+            <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#extra-info">
+                Click to add extra user info...</button>
+            </div>
+            <div>
+                <div id="extra-info" class="collapse">
+                    <div class="form-group">
+                        <label class="col-xs-2 control-label" for="realname">Real Name: </label>
+                        <div class="col-xs-4">
+                            <input type="text" id="realname" name="realname" class="form-control" placeholder="Real Name ">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-2 control-label" for="pid">PID.: </label>
+                        <div class="col-xs-4">
+                        <input type="text" id="pid" name="pid" class="form-control" placeholder="PID ">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="col-xs-2 control-label" for="phone">Phone No.: </label>
+                        <div class="col-xs-4">
+                        <input type="text" id="phone" name="phone" class="form-control" placeholder="phone No. ">
+                        </div>
+                    </div>
+            </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-xs-offset-2 col-xs-10">
+                <button type="submit" class="btn btn-primary">Register</button>
+            </div>
+        </div>
+
+    </form>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% endblock%}

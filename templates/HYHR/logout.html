@@ -1,0 +1,9 @@
+{% extends 'HYHR/layout.html' %}
+
+{% block content %}
+<h2>{{title}}</h2>
+<p>You have successfully logout the user.</p>
+<p>Go to <a href="{% url 'home' %}">Home</a></p>
+<p>Login with another account? <a href="{% url 'login' %}">Login</a> </p>
+
+{% endblock %}
