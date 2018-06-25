@@ -16,7 +16,7 @@ def sb_index(request):
                       'message':'index',
                       'year': datetime.now().year
                   })
-
+'''
 def sb_subsb(request, id):
     return render(request,'sb/index.html',
                   {
@@ -24,7 +24,7 @@ def sb_subsb(request, id):
                       'message': id,
                       'year': datetime.now().year
                   })
-
+'''
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
 def sb_subsb(request, id):
     return render(request,'sb/sb_index.html',
@@ -53,7 +53,7 @@ def sb_query(request):
                 pageid = 1
 
             try:
-                result = Order.objects.all()
+                result = Product_Order.objects.all()
                 if name !='':
                     result = result.filter(customer__name__icontains=name)
                 if pid !='':
@@ -71,7 +71,7 @@ def sb_query(request):
                 except EmptyPage:
                     rst = paginator.page(paginator.num_pages)
             except:
-                result = Order.objects.none()
+                result = Product_Order.objects.none()
             return render(request,'app/sb_query.html',
                   {
                       'title': 'Query',
