@@ -56,9 +56,7 @@ class Service_Order(models.Model):
     product = models.ForeignKey(Product, on_delete = models.CASCADE)
     svalidFrom = models.DateField()
     svalidTo = models.DateField()
-    stotal_price = models.FloatField() 
-    partner = models.ForeignKey(Partner, on_delete=models.CASCADE)
-    sprice2Partner = models.FloatField() 
+    stotal_price = models.FloatField()  
     pay_method=(
         ('WX','微信'),
         ('ZFB','支付宝'),
@@ -68,15 +66,31 @@ class Service_Order(models.Model):
     payaccount = models.CharField(max_length = 30)
     
     orderDate = models.DateField(default=timezone.now())
+    
+    partner = models.ForeignKey(Partner, on_delete=models.CASCADE,null=True, blank=True)
+    sprice2Partner = models.FloatField(null=True, blank=True, default=0)
     dealPlatform = models.CharField(max_length = 10, null=True, blank=True)
     snote = models.CharField(max_length = 100, null=True, blank=True)
 
     def __str__(self):
-        return self.customer.name + '(' + self.product.name + ':' + self.validFrom.strftime('%Y/%m/%d') + '--' + self.validTo.strftime('%Y/%m/%d') + ')'
+        return self.customer.name + '(' + self.product.name + ':' + self.svalidFrom.strftime('%Y/%m/%d') + '--' + self.svalidTo.strftime('%Y/%m/%d') + ')'
+
+class OrderType(models.Model):
+    name = models.CharField(max_length=20)
+    def __str__(self):
+        return self.name
+
+class District(models.Model):
+    name = models.CharField(max_length = 50)
+    def __str__(self):
+        return self.name    
 
 class Product_Order(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete = models.CASCADE)
+    orderType = models.ForeignKey(OrderType, on_delete= models.CASCADE, default = 1)
+    district = models.ForeignKey(District, on_delete = models.CASCADE, default = 1)
+    '''
     district_options = (
         ('BJCY','朝阳'),
         ('BJHD','海淀'),
@@ -91,12 +105,11 @@ class Product_Order(models.Model):
         ('BJYQ','延庆'),
         )
     district = models.CharField(max_length = 5, choices=district_options, default='BJFT')
+    '''
     product_base = models.FloatField()
     validFrom = models.DateField()
     validTo = models.DateField()
-    total_price = models.FloatField()
-    partner = models.ForeignKey(Partner, on_delete=models.CASCADE)
-    price2Partner = models.FloatField() 
+    total_price = models.FloatField() 
     pay_method=(
         ('WX','微信'),
         ('ZFB','支付宝'),
@@ -106,6 +119,9 @@ class Product_Order(models.Model):
     payaccount = models.CharField(max_length = 30)
     
     orderDate = models.DateField(default=timezone.now())
+
+    partner = models.ForeignKey(Partner, on_delete=models.CASCADE, null = True, blank=True)
+    price2Partner = models.FloatField(null=True,blank=True, default=0)
     dealPlatform = models.CharField(max_length = 10, null=True, blank=True)
     note = models.CharField(max_length = 100, null=True, blank=True)
 

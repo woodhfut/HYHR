@@ -45,6 +45,7 @@ class Product_OrderForm(ModelForm):
         exclude =['customer']
         labels = {
                 'product':_('业务名称'),
+                'orderType':_('业务类型'),
                 'district':_('所属区县'),
                 'validFrom':_('开始日期'),
                 'validTo':_('结束日期'),

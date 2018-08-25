@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
-from django.contrib.auth.views import login, logout
+from django.contrib.auth.views import LoginView, LogoutView
 
 from datetime import datetime
 
@@ -28,9 +28,9 @@ urlpatterns = [
     url(r'^contact$', views.contact, name='contact'),
     url(r'^about$', views.about, name='about'),
     url(r'^login/$',
-        login,
+        LoginView.as_view(template_name ='HYHR/login.html'),
         {
-            'template_name': 'HYHR/login.html',
+            #'template_name': 'HYHR/login.html',
             'authentication_form': forms.BootstrapAuthenticationForm,
             'extra_context':
             {
@@ -40,9 +40,9 @@ urlpatterns = [
         },
         name='login'),
 
-    url(r'logout/$', logout,
+    url(r'logout/$', LogoutView.as_view(template_name = 'HYHR/logout.html'),
         {
-            'template_name': 'HYHR/logout.html',
+            #'template_name': 'HYHR/logout.html',
             'extra_context':
             {
                 'title': 'Logout',
