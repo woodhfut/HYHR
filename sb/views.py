@@ -6,8 +6,9 @@ from django.contrib.auth.views import login_required
 from django.contrib.auth.decorators import user_passes_test, permission_required
 from django.db import transaction
 from .forms import QueryForm, CustomerForm, Product_OrderForm, Service_OrderForm
-from .models import Product_Order, Customer, Product, Service_Order, Partner
+from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
 
 def sb_index(request):
     return render(request,'sb/index.html',
@@ -205,13 +206,21 @@ def sb_add(request):
                     productName = p_cd['product']
                     product = Product.objects.get(name = productName)
                     
+                    otName = p_cd['orderType']
+                    ordertype = OrderType.objects.get(name=otName)
+
+                    dstName = p_cd['district']
+                    district = District.objects.get(name=dstName)
+
                     p_order, created = Product_Order.objects.get_or_create(
                         customer=customer, 
                         product=product,
+                        district = district,
+                        orderType = ordertype,
                         validFrom = p_cd['validFrom'],
                         validTo = p_cd['validTo'],
                         defaults={
-                            'district': p_cd['district'],
+                            
                             'product_base' : p_cd['product_base'],
                             'total_price' : p_cd['total_price'],
                             'paymethod' : p_cd['paymethod'],
@@ -240,20 +249,17 @@ def sb_add(request):
                             'dealPlatform' : p_cd['dealPlatform']
                         },
                     )
-            except:
-                return HttpResponse('failed...')
-            return render(request, 'sb/sb_add.html',
+            except Exception as ex:
+                return HttpResponse('exception met during add new order. {}'.format(ex))
+            return render(request, 'sb/add_success.html',
                   {
-                        'title':'Add Successfully.',
-                        'customer_form':customer_form,
-                        'p_order_form': p_order_form,
-                        's_order_form': s_order_form,
-                        'year':datetime.now().year    
+                        'title': '添加成功',
+                        'year':datetime.now().year,    
                   })
         else:
             return render(request, 'sb/sb_add.html',
                   {
-                        'title':'Add',
+                        'title':'新增',
                         'customer_form':customer_form,
                         'p_order_form': p_order_form,
                         's_order_form': s_order_form,
@@ -265,13 +271,12 @@ def sb_add(request):
         s_order_form = Service_OrderForm()
         return render(request, 'sb/sb_add.html',
                   {
-                        'title': 'Add',
+                        'title': '新增',
                         'customer_form':customer_form,
                         'p_order_form': p_order_form,
                         's_order_form': s_order_form,
                         'year':datetime.now().year    
                   })
-
 
 
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
@@ -343,10 +348,17 @@ def sb_reorder(request,id):
     else:
         p_order_form = Product_OrderForm()
         s_order_form = Service_OrderForm()    
+        svtdates = Service_Order.objects.filter(customer__pid = id).order_by('-svalidTo')
+        svdt = None
+        if len(svtdates) > 0:
+            svdt = svtdates[0]
+        
         return render(request, 'sb/sb_reorder.html',
-                        {
-                            'customer':customer,
-                            'p_order_form': p_order_form,
-                            's_order_form': s_order_form,
-                            'year':datetime.now().year
-                            })
+                    {
+                        'title': '续费',
+                        'customer':customer,
+                        'p_order_form': p_order_form,
+                        's_order_form': s_order_form,
+                        'svdt': svdt,
+                        'year':datetime.now().year
+                        })

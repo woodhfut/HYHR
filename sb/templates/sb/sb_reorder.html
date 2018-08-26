@@ -11,13 +11,13 @@
 <script type="text/javascript" src="/static/admin/js/calendar.js"></script>
 <script type="text/javascript" src="/static/admin/js/admin/DateTimeShortcuts.js"></script>
 
-<h2>{{title}}</h2>
+<h2 >{{title}}</h2>
 <form action="." method="post" role="form" class="form-horizontal" style="margin-top:40px">
     {% csrf_token %}
 
         <div class="form-group">
         <div class="col-sm-offset-1 col-sm-10">
-            <h4>Order for: {{customer}} </h4>
+            <h3>业务: {{customer}} </h3>
             <hr />
         </div>
     </div>
@@ -50,8 +50,22 @@
     {%endif%}
 
 {%endfor%}
+<br/>
 <hr />
+<br/>
 {% if s_order_form%}
+<h3>服务费续费</h3>
+{% if svdt %}
+<h4>注意：该客户服务费已交至 {{svdt.svalidTo}}</h4>
+{%endif%}
+
+
+<label for="chkServiceFee">
+    <input type="checkbox" id="chkServiceFee" />
+    Not this time?
+</label>
+<hr />
+<div id="serivceFeeDiv">
 {% for sfield in s_order_form %}
     {% if sfield.errors %}
         <div class="form-group has-error">
@@ -79,14 +93,31 @@
                 </div>
             </div>
     {%endif%}
-
 {%endfor%}
+</div>
 {%endif%}
+
     <div class="form-group">
         <div class="col-sm-offset-1 col-sm-10">
-            <button type="submit" class="btn btn-primary">Add</button>
+            <button type="submit" class="btn btn-primary">添加</button>
         </div>
     </div>
 </form>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script type="text/javascript">
+    $(function () {
+        $("#chkServiceFee").click(function () {
+            if ($(this).is(":checked")) {
+                $("#serivceFeeDiv").hide();
+            } else {
+                $("#serivceFeeDiv").show();
+            }
+        });
+    });
+</script>
 
 {% endblock %}
