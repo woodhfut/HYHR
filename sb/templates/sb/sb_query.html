@@ -88,11 +88,11 @@
                     <th>业务名称</th>
                     <th>所在区县</th>
                     <th>户口性质</th>
-                    <th>基数</th>
-
+                    <th>基数</th> 
                     <th>总价</th>
                     <th>开始日期</th>
                     <th>截至日期</th>
+                    <th>订单日期</th>   
                     <th>续费</th>
                 </tr>
             </thead>
@@ -105,10 +105,11 @@
                         <td>{{rst.product.name}}</td>
                         <td>{{rst.district.name}}</td>
                         <td>{{rst.customer.get_hukou_display}}</td>
-                        <td>{{rst.product_base}}</td>          
+                        <td>{{rst.product_base}}</td>        
                         <td>{{rst.total_price}}</td>
                         <td>{{rst.validFrom.year}}-{{rst.validFrom.month|stringformat:"02d"}}-{{rst.validFrom.day|stringformat:"02d"}}</td>
                         <td>{{rst.validTo.year}}-{{rst.validTo.month|stringformat:"02d"}}-{{rst.validTo.day|stringformat:"02d"}}</td>
+                        <td>{{rst.orderDate}}</td>   
                         <td><a href="/sb/reorder/{{rst.customer.pid}}">{{rst.product.name}}续费</a></td>
                     </tr>
                 {% endfor %}

@@ -58,7 +58,9 @@
 {% if latestsvcRec %}
 <h4>注意：客户{{latestsvcRec.customer.name}}服务费已交至 {{latestsvcRec.svalidTo}}</h4>
 {%endif%}
-
+{% if dateValidError %}
+<h4 style="color:red">{{dateValidError}}</h4>
+{%endif%}
 
 <label for="chkServiceFee">
     <input type="checkbox" name ="chkServiceFee" id="chkServiceFee" />

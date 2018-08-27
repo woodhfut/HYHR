@@ -64,6 +64,7 @@ def sb_query(request):
                 if dateTo:
                     result = result.filter(validFrom__lte=dateTo)
 
+                result = result.order_by('name')
                 paginator = Paginator(result, pagecount)
                 try:
                     rst = paginator.page(pageid)
@@ -139,7 +140,7 @@ def sb_query(request):
                     if dateTo:
                 
                         result = result.filter(validFrom__lte=dateTo)
-
+                    
                     paginator = Paginator(result, pagecount)
                     try:
                         rst = paginator.page(pageid)
@@ -286,6 +287,13 @@ def sb_reorder(request,id):
     if request.POST:
         p_order_form = Product_OrderForm(request.POST)
         checkServiceFee = request.POST.get('chkServiceFee',False)
+        latestsrecs = Service_Order.objects.filter(customer__pid = id).order_by('-svalidTo')
+        latestsvcRec = None
+        if len(latestsrecs) > 0:
+            latestsvcRec = latestsrecs[0]
+        chk = '1'
+        if not checkServiceFee:
+            chk = '0'
         if p_order_form.is_valid():
             p_cd = p_order_form.cleaned_data
             try:
@@ -315,49 +323,74 @@ def sb_reorder(request,id):
                 
                 if not checkServiceFee:
                     #check whether service order exists.
-                    if not Service_Order.objects.filter(customer__pid = customer.pid, product=product, svalidTo__gte = p_cd['validTo']).exists():
-                        s_order_form = Service_OrderForm(request.POST)
-                        if s_order_form.is_valid():
-                            s_cd = s_order_form.cleaned_data
+                    s_order_form = Service_OrderForm(request.POST)
+                    if s_order_form.is_valid():
+                        s_cd = s_order_form.cleaned_data
+                        ###TODO: Here constrains only include situation... need more precise validation
+                        if not Service_Order.objects.filter(customer__pid = customer.pid,product=product, 
+                            svalidTo__gte=s_cd['svalidTo'], svalidFrom__lte=s_cd['svalidFrom']).exists(): 
                             spaymthdname = s_cd['paymethod']
                             spaymtd = PayMethod.objects.get(name=paymthdname)
 
                             s_order = Service_Order.objects.create(
                                 customer = customer,
                                 product = product,
-                                validFrom = s_cd['svalidFrom'],
-                                validTo = s_cd['svalidTo'],
-                                total_price = s_cd['stotal_price'],
+                                svalidFrom = s_cd['svalidFrom'],
+                                svalidTo = s_cd['svalidTo'],
+                                stotal_price = s_cd['stotal_price'],
                                 paymethod =spaymtd,
-                                payaccount = p_cd['payaccount'],
-                                partner = p_cd['partner'],
-                                price2Partner = s_cd['sprice2Partner'],
+                                payaccount = s_cd['payaccount'],
+                                partner = s_cd['partner'],
+                                sprice2Partner = s_cd['sprice2Partner'],
                                 orderDate = p_cd['orderDate'],
                                 
-                                note = s_cd['snote']
+                                snote = s_cd['snote']
                             )
-                        #s_order.save()
-                        with transaction.atomic():
-                            p_order.save()
-                            s_order.save()
+                            #s_order.save()
+                            with transaction.atomic():
+                                p_order.save()
+                                s_order.save()
+                        else:
+                            
+                            return render(request, 'sb/sb_reorder.html',
+                            {
+                                'title': '续费',
+                                'customer':customer,
+                                'p_order_form': p_order_form,
+                                's_order_form': s_order_form,
+                                'latestsvcRec': latestsvcRec,
+                                'chkServiceFee': chk,
+                                'dateValidError' : '错误：客户已经支付过所选时间段的服务费',
+                                'year':datetime.now().year
+                                })
                     else:
-                        return HttpResponse('error in service order....')
+                        return render(request, 'sb/sb_reorder.html',
+                            {
+                                'title': '续费',
+                                'customer':customer,
+                                'p_order_form': p_order_form,
+                                's_order_form': s_order_form,
+                                'latestsvcRec': latestsvcRec,
+                                'chkServiceFee':chk,
+                                'year':datetime.now().year
+                            })
+                    
                 else:
                     p_order.save()
 
-            except:
-                return HttpResponse('Error......')
-            return HttpResponse('success!')
+            except Exception as ex:
+                return render(request, 'HYHR/error.html',
+                {
+                    'errormessage': ex,
+                    'year':datetime.now().year
+                })
+            return render(request, 'sb/reorder_success.html',
+            {
+                'title':'续费成功!',
+                'year':datetime.now().year
+            })
         else:
-            s_order_form = Service_OrderForm(request.POST)
-            latestsrecs = Service_Order.objects.filter(customer__pid = id).order_by('-svalidTo')
-            latestsvcRec = None
-            if len(latestsrecs) > 0:
-                latestsvcRec = latestsrecs[0]
-            chk = '1'
-            if not checkServiceFee:
-                chk = '0'
-            
+            s_order_form = Service_OrderForm(request.POST)            
             return render(request, 'sb/sb_reorder.html',
                             {
                                 'title': '续费',

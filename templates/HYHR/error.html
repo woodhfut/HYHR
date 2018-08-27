@@ -1,0 +1,9 @@
+{% extends 'HYHR/layout.html' %}
+
+{% block content %}
+<h2>出错了！</h2>
+<p>请保存一下信息，并联系管理员。</p>
+<p>{{errormessage}}.</p>
+<p>返回 <a href="{% url 'home' %}">首页</a></p>
+
+{% endblock %}
