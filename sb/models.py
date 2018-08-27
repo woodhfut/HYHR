@@ -51,25 +51,26 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+class PayMethod(models.Model):
+    name = models.CharField(max_length = 20)
+
+    def __str__(self):
+        return self.name
+
 class Service_Order(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete = models.CASCADE)
     svalidFrom = models.DateField()
     svalidTo = models.DateField()
     stotal_price = models.FloatField()  
-    pay_method=(
-        ('WX','微信'),
-        ('ZFB','支付宝'),
-        ('YHK','银行卡'),
-        )
-    paymethod = models.CharField(max_length =3 , choices=pay_method)
+    paymethod = models.ForeignKey(PayMethod, on_delete= models.CASCADE)
     payaccount = models.CharField(max_length = 30)
     
     orderDate = models.DateField(default=timezone.now())
     
     partner = models.ForeignKey(Partner, on_delete=models.CASCADE,null=True, blank=True)
     sprice2Partner = models.FloatField(null=True, blank=True, default=0)
-    dealPlatform = models.CharField(max_length = 10, null=True, blank=True)
+    #dealPlatform = models.CharField(max_length = 10, null=True, blank=True)
     snote = models.CharField(max_length = 100, null=True, blank=True)
 
     def __str__(self):
@@ -110,19 +111,15 @@ class Product_Order(models.Model):
     validFrom = models.DateField()
     validTo = models.DateField()
     total_price = models.FloatField() 
-    pay_method=(
-        ('WX','微信'),
-        ('ZFB','支付宝'),
-        ('YHK','银行卡'),
-        )
-    paymethod = models.CharField(max_length =3 , choices=pay_method)
+
+    paymethod = models.ForeignKey(PayMethod, on_delete= models.CASCADE)
     payaccount = models.CharField(max_length = 30)
     
     orderDate = models.DateField(default=timezone.now())
 
-    partner = models.ForeignKey(Partner, on_delete=models.CASCADE, null = True, blank=True)
-    price2Partner = models.FloatField(null=True,blank=True, default=0)
-    dealPlatform = models.CharField(max_length = 10, null=True, blank=True)
+    #partner = models.ForeignKey(Partner, on_delete=models.CASCADE, null = True, blank=True)
+    #price2Partner = models.FloatField(null=True,blank=True, default=0)
+    #dealPlatform = models.CharField(max_length = 10, null=True, blank=True)
     note = models.CharField(max_length = 100, null=True, blank=True)
 
     def __str__(self):

@@ -40,6 +40,12 @@ class CustomerForm(ModelForm):
         return id
 
 class Product_OrderForm(ModelForm):
+    def clean_validTo(self):
+        cdf = self.cleaned_data.get('validFrom',None)
+        cdt = self.cleaned_data.get('validTo', None)
+        if cdf and cdt and cdf > cdt:
+            raise forms.ValidationError(_('DateTo should be bigger than DateFrom.'), code=_('invalid_date'))
+        return cdt
     class Meta:
         model = Product_Order
         exclude =['customer']
@@ -54,9 +60,6 @@ class Product_OrderForm(ModelForm):
                 'paymethod':_('支付方式'),
                 'payaccount':_('支付账户'),
                 'orderDate':_('下单日期'),
-                'partner':_('合作伙伴'),
-                'price2Partner':_('应给合伙人费用'),
-                'dealPlatform':_('交易平台'),
                 'note':_('备注'),
                 
             }
@@ -67,11 +70,18 @@ class Product_OrderForm(ModelForm):
             }
 
 class Service_OrderForm(ModelForm):
+    def clean_svalidTo(self):
+        cdf = self.cleaned_data.get('svalidFrom',None)
+        cdt = self.cleaned_data.get('svalidTo', None)
+        if cdf and cdt and cdf > cdt:
+            raise forms.ValidationError(_('DateTo should be bigger than DateFrom.'), code=_('invalid_date'))
+        return cdt
     class Meta:
         model = Service_Order
-        fields=['svalidFrom', 'svalidTo', 'stotal_price', 'sprice2Partner','snote']
+        fields=['svalidFrom', 'svalidTo', 'stotal_price', 'paymethod','payaccount','partner','sprice2Partner','snote']
         labels = {
-                'product':_('业务名称'),
+                #'customer':_('客户姓名'),
+                #'product':_('业务名称'),
                 'svalidFrom':_('开始日期'),
                 'svalidTo':_('结束日期'),
                 'stotal_price':_('总价'),
@@ -80,14 +90,13 @@ class Service_OrderForm(ModelForm):
                 'orderDate':_('下单日期'),
                 'partner':_('合作伙伴'),
                 'sprice2Partner':_('应给合伙人费用'),
-                'dealPlatform':_('交易平台'),
                 'snote':_('备注'),
                 
             }
         widgets={
-                'svalidFrom':AdminDateWidget({'placeholder':'服务费开始日期.'}),
-                'svalidTo': AdminDateWidget({'placeholder':'服务费结束日期.'}),
-                'orderDate': AdminDateWidget({'placeholder': 'Order date.'}),
+                'svalidFrom':AdminDateWidget({'placeholder':'开始日期.'}),
+                'svalidTo': AdminDateWidget({'placeholder':'结束日期.'}),
+                'orderDate': AdminDateWidget({'placeholder': '缴纳日期.'}),
             } 
         
 class QueryForm(forms.Form):

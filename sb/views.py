@@ -6,7 +6,7 @@ from django.contrib.auth.views import login_required
 from django.contrib.auth.decorators import user_passes_test, permission_required
 from django.db import transaction
 from .forms import QueryForm, CustomerForm, Product_OrderForm, Service_OrderForm
-from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District
+from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, PayMethod
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 
@@ -212,23 +212,23 @@ def sb_add(request):
                     dstName = p_cd['district']
                     district = District.objects.get(name=dstName)
 
+                    paymtdName = p_cd['paymethod']
+                    paymtd = PayMethod.objects.get(name=paymtdName)
+
                     p_order, created = Product_Order.objects.get_or_create(
                         customer=customer, 
                         product=product,
                         district = district,
                         orderType = ordertype,
+                        paymethod = paymtd,
                         validFrom = p_cd['validFrom'],
                         validTo = p_cd['validTo'],
                         defaults={
                             
                             'product_base' : p_cd['product_base'],
                             'total_price' : p_cd['total_price'],
-                            'paymethod' : p_cd['paymethod'],
                             'payaccount' : p_cd['payaccount'],
                             'orderDate' : p_cd['orderDate'],
-                            'partner': p_cd['partner'],
-                            'price2Partner': p_cd['price2Partner'],
-                            'dealPlatform' : p_cd['dealPlatform'],
                             'note' : p_cd['note']
                         },
                     )
@@ -242,11 +242,10 @@ def sb_add(request):
                             'stotal_price': s_cd['stotal_price'], 
                             'sprice2Partner': s_cd['sprice2Partner'],
                             'snote' : s_cd['snote'],
-                            'paymethod' : p_cd['paymethod'],
-                            'payaccount' : p_cd['payaccount'],
+                            'paymethod' : s_cd['paymethod'],
+                            'payaccount' : s_cd['payaccount'],
                             'orderDate' : p_cd['orderDate'],
-                            'partner': p_cd['partner'],
-                            'dealPlatform' : p_cd['dealPlatform']
+                            'partner': s_cd['partner'],
                         },
                     )
             except Exception as ex:
@@ -286,72 +285,96 @@ def sb_reorder(request,id):
 
     if request.POST:
         p_order_form = Product_OrderForm(request.POST)
+        checkServiceFee = request.POST.get('chkServiceFee',False)
         if p_order_form.is_valid():
             p_cd = p_order_form.cleaned_data
             try:
                 productName = p_cd['product']
                 product = Product.objects.get(name = productName)
+
+                paymthdname = p_cd['paymethod']
+                paymtd = PayMethod.objects.get(name=paymthdname)
+
+                dstName = p_cd['district']
+                district = District.objects.get(name= dstName)
+
                 p_order = Product_Order(
                         customer=customer, 
                         product=product,
                         validFrom = p_cd['validFrom'],
                         validTo = p_cd['validTo'],
-                        district = p_cd['district'],
+                        district = district,
                         product_base = p_cd['product_base'],
                         total_price = p_cd['total_price'],
-                        paymethod =p_cd['paymethod'],
+                        paymethod =paymtd,
                         payaccount = p_cd['payaccount'],
-                        partner = p_cd['partner'],
-                        price2Partner = p_cd['price2Partner'],
                         orderDate = p_cd['orderDate'],
-                        dealPlatform = p_cd['dealPlatform'],
                         note = p_cd['note']
                         )
                 #order.save()
+                
+                if not checkServiceFee:
+                    #check whether service order exists.
+                    if not Service_Order.objects.filter(customer__pid = customer.pid, product=product, svalidTo__gte = p_cd['validTo']).exists():
+                        s_order_form = Service_OrderForm(request.POST)
+                        if s_order_form.is_valid():
+                            s_cd = s_order_form.cleaned_data
+                            spaymthdname = s_cd['paymethod']
+                            spaymtd = PayMethod.objects.get(name=paymthdname)
 
-                #check whether service order exists.
-                if not Service_Order.objects.filter(customer__pid = customer.pid, product=product, svalidTo__gte = p_cd['validTo']).exists():
-                    s_order_form = Service_OrderForm(request.POST)
-                    if s_order_form.is_valid():
-                        s_cd = s_order_form.cleaned_data
-                        s_order = Service_Order.objects.create(
-                            customer = customer,
-                            product = product,
-                            validFrom = s_cd['svalidFrom'],
-                            validTo = s_cd['svalidTo'],
-                            total_price = s_cd['stotal_price'],
-                            paymethod =p_cd['paymethod'],
-                            payaccount = p_cd['payaccount'],
-                            partner = p_cd['partner'],
-                            price2Partner = s_cd['sprice2Partner'],
-                            orderDate = p_cd['orderDate'],
-                            dealPlatform = p_cd['dealPlatform'],
-                            note = s_cd['snote']
-                        )
+                            s_order = Service_Order.objects.create(
+                                customer = customer,
+                                product = product,
+                                validFrom = s_cd['svalidFrom'],
+                                validTo = s_cd['svalidTo'],
+                                total_price = s_cd['stotal_price'],
+                                paymethod =spaymtd,
+                                payaccount = p_cd['payaccount'],
+                                partner = p_cd['partner'],
+                                price2Partner = s_cd['sprice2Partner'],
+                                orderDate = p_cd['orderDate'],
+                                
+                                note = s_cd['snote']
+                            )
                         #s_order.save()
                         with transaction.atomic():
                             p_order.save()
                             s_order.save()
                     else:
                         return HttpResponse('error in service order....')
+                else:
+                    p_order.save()
 
             except:
                 return HttpResponse('Error......')
             return HttpResponse('success!')
         else:
-            return render(request, 'sbapp/sb_reorder.html',
-                          {
-                              'customer':customer,
-                              'order_form': p_order_form,
-                              'year':datetime.now().year
-                              })
+            s_order_form = Service_OrderForm(request.POST)
+            latestsrecs = Service_Order.objects.filter(customer__pid = id).order_by('-svalidTo')
+            latestsvcRec = None
+            if len(latestsrecs) > 0:
+                latestsvcRec = latestsrecs[0]
+            chk = '1'
+            if not checkServiceFee:
+                chk = '0'
+            
+            return render(request, 'sb/sb_reorder.html',
+                            {
+                                'title': '续费',
+                                'customer':customer,
+                                'p_order_form': p_order_form,
+                                's_order_form': s_order_form,
+                                'latestsvcRec': latestsvcRec,
+                                'chkServiceFee':chk,
+                                'year':datetime.now().year
+                                })
     else:
         p_order_form = Product_OrderForm()
         s_order_form = Service_OrderForm()    
-        svtdates = Service_Order.objects.filter(customer__pid = id).order_by('-svalidTo')
-        svdt = None
-        if len(svtdates) > 0:
-            svdt = svtdates[0]
+        latestsrecs = Service_Order.objects.filter(customer__pid = id).order_by('-svalidTo')
+        latestsvcRec = None
+        if len(latestsrecs) > 0:
+            latestsvcRec = latestsrecs[0]
         
         return render(request, 'sb/sb_reorder.html',
                     {
@@ -359,6 +382,6 @@ def sb_reorder(request,id):
                         'customer':customer,
                         'p_order_form': p_order_form,
                         's_order_form': s_order_form,
-                        'svdt': svdt,
+                        'latestsvcRec': latestsvcRec,
                         'year':datetime.now().year
                         })

@@ -12,7 +12,7 @@
 <script type="text/javascript" src="/static/admin/js/admin/DateTimeShortcuts.js"></script>
 
 <h2 >{{title}}</h2>
-<form action="." method="post" role="form" class="form-horizontal" style="margin-top:40px">
+<form action="." method="POST" role="form" class="form-horizontal" style="margin-top:40px">
     {% csrf_token %}
 
         <div class="form-group">
@@ -55,14 +55,14 @@
 <br/>
 {% if s_order_form%}
 <h3>服务费续费</h3>
-{% if svdt %}
-<h4>注意：该客户服务费已交至 {{svdt.svalidTo}}</h4>
+{% if latestsvcRec %}
+<h4>注意：客户{{latestsvcRec.customer.name}}服务费已交至 {{latestsvcRec.svalidTo}}</h4>
 {%endif%}
 
 
 <label for="chkServiceFee">
-    <input type="checkbox" id="chkServiceFee" />
-    Not this time?
+    <input type="checkbox" name ="chkServiceFee" id="chkServiceFee" />
+    暂不缴服务费
 </label>
 <hr />
 <div id="serivceFeeDiv">
@@ -113,11 +113,22 @@
         $("#chkServiceFee").click(function () {
             if ($(this).is(":checked")) {
                 $("#serivceFeeDiv").hide();
+                $("#serivceFeeDiv *").prop('disabled',true);
             } else {
                 $("#serivceFeeDiv").show();
+                $("#serivceFeeDiv *").prop('disabled',false);
             }
         });
     });
+    $(document).ready(function(){
+        if ('{{chkServiceFee}}' == '1')
+        {
+            $("#chkServiceFee").prop('checked',false);
+            $("#chkServiceFee").click()
+        }
+
+    });
+
 </script>
 
 {% endblock %}
