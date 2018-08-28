@@ -127,7 +127,8 @@ def sb_query(request):
                           })
             if form.is_valid():
                 try:
-                    result = Product_Order.objects.all()
+                    result = Product_Order.objects.order_by('-id')
+                    
                     if name and len(name.strip()) > 0:
                 
                         result = result.filter(customer__name__icontains=name)

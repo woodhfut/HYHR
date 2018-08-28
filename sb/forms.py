@@ -39,6 +39,13 @@ class CustomerForm(ModelForm):
                     raise forms.ValidationError('pid with length 18 should be numeric or end with X.')
         return id
 
+    def clean_phone(self):
+        phone = self.cleaned_data.get('phone', None)
+        if phone:
+            phone = phone.strip()
+            if len(phone) != 11:
+                raise forms.ValidationError(_('手机号码必须为11位.'), code=_('invalid_length'))
+
 class Product_OrderForm(ModelForm):
     def clean_validTo(self):
         cdf = self.cleaned_data.get('validFrom',None)
@@ -46,6 +53,17 @@ class Product_OrderForm(ModelForm):
         if cdf and cdt and cdf > cdt:
             raise forms.ValidationError(_('DateTo should be bigger than DateFrom.'), code=_('invalid_date'))
         return cdt
+    
+    def clean_product_base(self):
+        base = self.cleaned_data.get('product_base', 0.0)
+        if base < 0:
+            raise forms.ValidationError(_('基数必须为正数.'), code=_('invalid_value'))
+
+    def clean_total_price(self):
+        base = self.cleaned_data.get('total_price', 0.0)
+        if base < 0:
+            raise forms.ValidationError(_('总价必须为正数.'), code=_('invalid_value'))     
+
     class Meta:
         model = Product_Order
         exclude =['customer']
@@ -76,6 +94,12 @@ class Service_OrderForm(ModelForm):
         if cdf and cdt and cdf > cdt:
             raise forms.ValidationError(_('DateTo should be bigger than DateFrom.'), code=_('invalid_date'))
         return cdt
+    
+    def clean_stotal_price(self):
+        base = self.cleaned_data.get('stotal_price', 0.0)
+        if base < 0:
+            raise forms.ValidationError(_('总价必须为正数.'), code=_('invalid_value'))     
+
     class Meta:
         model = Service_Order
         fields=['svalidFrom', 'svalidTo', 'stotal_price', 'paymethod','payaccount','partner','sprice2Partner','snote']
