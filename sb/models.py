@@ -33,7 +33,7 @@ class Customer(models.Model):
         )
 
     hukou = models.CharField(max_length = 8, choices=Hukou_Type)
-    
+    status = models.BooleanField(default=True)
     wechat = models.CharField(max_length = 50, null= True, blank=True)   
     introducer = models.CharField(max_length = 30, null=True, blank=True)
     note = models.CharField(max_length = 50, null= True, blank=True)

@@ -1,0 +1,44 @@
+{% extends 'HYHR/layout.html' %}
+
+{% block content %}
+<h2>{{title}}</h2>
+<form class="form-horizontal" role="form" method="POST">
+    
+    {% csrf_token %}
+    {% if next %}
+        <input type="hidden" name="next" value="{{ next }}">
+    {% else %}
+        <input type="hidden" name="next" value="/">
+    {% endif %}
+	<div class="form-group">
+		<label for="firstname" class="col-sm-2 control-label">姓名：</label>
+		<div class="col-sm-4">
+			<input type="text" class="form-control" id="name", name="name" 
+				   placeholder="请输入名字">
+        </div>
+        <label for="lastname" class="col-sm-2 control-label">身份证号：</label>
+		<div class="col-sm-4">
+			<input type="text" class="form-control" id="pid", name="pid" 
+				   placeholder="请输入身份证号">
+		</div>
+	</div>
+    {% if error %}
+    <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <label style="color:red">{{error}}</label>
+            </div>
+        </div>
+    {% endif %}
+	<div class="form-group">
+		<div class="col-sm-offset-2 col-sm-10">
+			<button type="submit" class="btn btn-default">查询</button>
+		</div>
+    </div>
+    
+    {% if customers %}
+        {{customers.as_table}}
+    {% endif %}
+
+</form>
+
+{% endblock %}

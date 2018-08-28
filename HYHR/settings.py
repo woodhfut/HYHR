@@ -76,11 +76,11 @@ LOGGING = {
         },
     },
     'loggers': {
-        'django': {
-            'handlers': ['default','console'],
-            'level': 'DEBUG',
-            'propagate': False
-        },
+        # 'django': {
+        #     'handlers': ['default','console'],
+        #     'level': 'DEBUG',
+        #     'propagate': False
+        # },
         'sb':{
             'handlers': ['default','console'],
             'level': 'DEBUG',

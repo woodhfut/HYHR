@@ -39,6 +39,7 @@
                             {% if user.is_authenticated and user.is_superuser %}
                             
                             <li><a href="{% url 'sb:sb_add' %}">新增</a> </li>
+                            <li><a href="{% url 'sb:sb_remove' %}">减员</a></li>
                             <li class="divider"></li>
                             <li><a href="{% url 'sb:sb_subsb' 3 %}">SB3</a> </li>
                             {% endif %}

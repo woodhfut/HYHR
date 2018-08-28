@@ -129,7 +129,7 @@ def sb_query(request):
                           })
             if form.is_valid():
                 try:
-                    result = Product_Order.objects.order_by('-id')
+                    result = Product_Order.objects.filter(customer__status = True).order_by('-id')
                     
                     if name and len(name.strip()) > 0:
                 
@@ -421,3 +421,41 @@ def sb_reorder(request,id):
                         'latestsvcRec': latestsvcRec,
                         'year':datetime.now().year
                         })
+
+
+@user_passes_test(lambda u: u.is_superuser, login_url='/login/')
+def sb_remove(request):
+    if request.POST:
+        name = request.POST.get('name', None)
+        pid = request.POST.get('pid', None)
+
+        if not name and not pid:
+            return render(request, 'sb/sb_remove.html',
+            {
+                'title': '减员',
+                'error':'错误：姓名和身份证号至少提供一项.',
+
+            })
+        else:
+            customers = Customer.objects.all()
+            if name:
+                customers = customers.filter(name__iexact = name)
+            if pid:
+                customers = customers.filter(pid = pid)
+            
+            return render(request, 'sb/sb_remove.html',
+            {
+                'title': '减员',
+                'customers': customers[0],
+
+            })
+    else:
+        return render(request, 'sb/sb_remove.html',
+        {
+            'title': '减员',
+        })
+
+@user_passes_test(lambda u: u.is_superuser, login_url='/login/')
+def sb_remove_id(request, id):
+    return HttpResponse('this is remove_id page.')
+

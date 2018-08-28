@@ -9,5 +9,7 @@ urlpatterns = [
     url(r'^query/$', views.sb_query, name='sb_query'),
     url(r'^add/$', views.sb_add, name='sb_add'),
     url(r'^reorder/(?P<id>(\d{6})(\d{4})(\d{2})(\d{2})(\d{3})([0-9]|X))/$', views.sb_reorder, name='sb_reorder'),
+    url(r'^remove/$', views.sb_remove, name='sb_remove'),
+    url(r'^remove/(?P<id>(\d{6})(\d{4})(\d{2})(\d{2})(\d{3})([0-9]|X))/$', views.sb_remove_id, name='sb_reorder_id'),
 
 ]
