@@ -8,6 +8,8 @@ from django.db import transaction
 from .forms import QueryForm, CustomerForm, Product_OrderForm, Service_OrderForm
 from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, PayMethod
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+import logging
+logger = logging.getLogger(__name__)
 
 
 def sb_index(request):
