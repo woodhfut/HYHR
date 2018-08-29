@@ -7,6 +7,7 @@
     {% load staticfiles %}
     <link rel="stylesheet" type="text/css" href="{% static 'HYHR/content/bootstrap.min.css' %}" />
     <link rel="stylesheet" type="text/css" href="{% static 'HYHR/content/site.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'HYHR/css/bootstrap.dropdown.hack.css'%}" />
     <script src="{% static 'HYHR/scripts/modernizr-2.6.2.js' %}"></script>
     
     <link rel="icon" href="{% static 'HYHR/img/favicon.ico' %}" mce_href="{% static 'HYHR/img/favicon.ico' %}" type="image/x-icon">
@@ -34,14 +35,24 @@
                             业务<b class="caret"></b>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="{% url 'sb:sb_index' %}">介绍</a> </li>
-                            <li><a href="{% url 'sb:sb_query' %}">查询</a> </li>
+                            <li><a href="{% url 'sb:sb_index' %}">业务简介</a> </li>
+                            <li><a href="{% url 'sb:sb_query' %}">业务查询</a> </li>
                             {% if user.is_authenticated and user.is_superuser %}
-                            
-                            <li><a href="{% url 'sb:sb_add' %}">新增</a> </li>
-                            <li><a href="{% url 'sb:sb_remove' %}">减员</a></li>
+                            <li class="offset-right dropdown">
+                                    <a href="#" class="dropdown-toggle">社保<b class="caret"></b></a>
+                                    <ul class="dropdown-menu">
+                                        <li><a href="{% url 'sb:sb_add' 1 %}">新增</a> </li>
+                                        <li><a href="{% url 'sb:sb_remove' 1 %}">减员</a></li>
+                                    </ul>
+                                  </li>
                             <li class="divider"></li>
-                            <li><a href="{% url 'sb:sb_subsb' 3 %}">SB3</a> </li>
+                            <li class="offset-right dropdown">
+                                    <a href="#" class="dropdown-toggle">公积金<b class="caret"></b></a>
+                                    <ul class="dropdown-menu">
+                                        <li><a href="{% url 'sb:sb_add' 2 %}">新增</a> </li>
+                                        <li><a href="{% url 'sb:sb_remove' 2 %}">减员</a></li>
+                                    </ul>
+                            </li>
                             {% endif %}
                         </ul>
                     </li>

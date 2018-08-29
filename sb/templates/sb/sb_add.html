@@ -50,6 +50,11 @@
                                     {% else %}
                                     <label></label>
                                     {% endif %}
+                                    {% if  dup_pid_error  %}
+                                        {% if cfield.name == 'pid'%}
+                                        <label style="color: red">{{ dup_pid }}</label>
+                                        {% endif %}
+                                    {% endif %}
                                     {% if cfield.help_text %}
                                         <label class="help-tooltip"><small>{{ cfield.help_text }}</small></label>
                                     {% endif %}
@@ -86,6 +91,11 @@
                                     {% else %}
                                     <label></label>
                                     {% endif %}
+                                    {% if  dup_date_error  %}
+                                        {% if cfield.name == 'validTo'%}
+                                        <label style="color: red">{{ dup_date_error }}</label>
+                                        {% endif %}
+                                    {% endif %}
                                     {% if pfield.help_text %}
                                         <label class="help-inline"><small>{{ pfield.help_text }}</small></label>
                                     {% endif %}
@@ -121,6 +131,11 @@
                                     <label style="color: red">*</label>
                                     {% else %}
                                     <label></label>
+                                    {% endif %}
+                                    {% if  dup_date_error  %}
+                                        {% if cfield.name == 'validTo'%}
+                                        <label style="color: red">{{ dup_sdate_error }}</label>
+                                        {% endif %}
                                     {% endif %}
                                     {% if sfield.help_text %}
                                         <label class="help-inline"><small>{{ sfield.help_text }}</small></label>

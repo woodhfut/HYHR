@@ -6,10 +6,12 @@ from django.contrib.auth.views import login_required
 from django.contrib.auth.decorators import user_passes_test, permission_required
 from django.db import transaction
 from .forms import QueryForm, CustomerForm, Product_OrderForm, Service_OrderForm
-from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, PayMethod
+from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, PayMethod, CustomerStatus
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import logging
 logger = logging.getLogger(__name__)
+
+
 
 
 def sb_index(request):
@@ -129,7 +131,7 @@ def sb_query(request):
                           })
             if form.is_valid():
                 try:
-                    result = Product_Order.objects.filter(customer__status = True).order_by('-id')
+                    result = Product_Order.objects.filter(customer__status__value__gt = 0).order_by('-id')
                     
                     if name and len(name.strip()) > 0:
                 
@@ -184,7 +186,9 @@ def sb_query(request):
                       })
 
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
-def sb_add(request):
+def sb_add(request, id):
+    product = Product.objects.get(value=id)
+    title = '新增{}'.format(product.name)
     if request.POST:
         customer_form = CustomerForm(request.POST)
         p_order_form = Product_OrderForm(request.POST)
@@ -195,20 +199,41 @@ def sb_add(request):
             s_cd = s_order_form.cleaned_data
             try:
                 with transaction.atomic():
+                    #use the product from id, ignore what is selected.
+                    statusvalue = 0
+                    if product.value == 1:#sb
+                        statusvalue = 1
+                    elif product.value == 2:#gjj
+                        statusvalue = 2
+
+                    status = CustomerStatus.objects.get(value=statusvalue)
                     customer, created = Customer.objects.get_or_create(
-                        name = c_cd['name'],
                         pid = c_cd['pid'],
                         defaults = {
+                            'name' : c_cd['name'],
                             'phone' : c_cd['phone'],
                             'hukou' : c_cd['hukou'],
+                            'status': status,
                             'wechat' : c_cd['wechat'],
                             'introducer' : c_cd['introducer'],
                             'note' : c_cd['note']
                         },
                     )
-    
-                    productName = p_cd['product']
-                    product = Product.objects.get(name = productName)
+                    if not created:#if customer already exists, add the new status to it
+                        if customer.name != c_cd['name']:
+                            return render(request, 'sb/sb_add.html',
+                            {
+                                    'title':title,
+                                    'customer_form':customer_form,
+                                    'p_order_form': p_order_form,
+                                    's_order_form': s_order_form,
+                                    'dup_pid_error':'错误:已经存在身份证号为{},姓名为{}的客户, 请重新确认填写的身份证号是否正确.'.format(c_cd['pid'], customer.name),
+                                    'year':datetime.now().year    
+                            })
+                        newStaValue = customer.status.value | statusvalue
+                        newSta = CustomerStatus.objects.get(value=newStaValue)
+                        customer.status = newSta
+                        customer.save()
                     
                     otName = p_cd['orderType']
                     ordertype = OrderType.objects.get(name=otName)
@@ -223,19 +248,28 @@ def sb_add(request):
                         customer=customer, 
                         product=product,
                         district = district,
-                        orderType = ordertype,
-                        paymethod = paymtd,
                         validFrom = p_cd['validFrom'],
                         validTo = p_cd['validTo'],
                         defaults={
-                            
+                            'orderType' : ordertype,
+                            'paymethod' : paymtd,    
                             'product_base' : p_cd['product_base'],
                             'total_price' : p_cd['total_price'],
                             'payaccount' : p_cd['payaccount'],
-                            'orderDate' : p_cd['orderDate'],
+                            #'orderDate' : p_cd['orderDate'],
                             'note' : p_cd['note']
                         },
                     )
+                    if not created:
+                        return render(request, 'sb/sb_add.html',
+                            {
+                                    'title':title,
+                                    'customer_form':customer_form,
+                                    'p_order_form': p_order_form,
+                                    's_order_form': s_order_form,
+                                    'dup_date_error':'错误:此时间段已经存在{}订单.'.format(product.name),
+                                    'year':datetime.now().year    
+                            })
 
                     s_order, created = Service_Order.objects.get_or_create(
                         customer = customer,
@@ -248,10 +282,22 @@ def sb_add(request):
                             'snote' : s_cd['snote'],
                             'paymethod' : s_cd['paymethod'],
                             'payaccount' : s_cd['payaccount'],
-                            'orderDate' : p_cd['orderDate'],
+                            #'orderDate' : p_cd['orderDate'],
                             'partner': s_cd['partner'],
                         },
                     )
+
+                    if not created:
+                        return render(request, 'sb/sb_add.html',
+                            {
+                                    'title':title,
+                                    'customer_form':customer_form,
+                                    'p_order_form': p_order_form,
+                                    's_order_form': s_order_form,
+                                    'dup_sdate_error':'错误:此时间段已经存在{}订单.'.format(product.name),
+                                    'year':datetime.now().year    
+                            })
+
             except Exception as ex:
                 return HttpResponse('exception met during add new order. {}'.format(ex))
             return render(request, 'sb/add_success.html',
@@ -262,7 +308,7 @@ def sb_add(request):
         else:
             return render(request, 'sb/sb_add.html',
                   {
-                        'title':'新增',
+                        'title':title,
                         'customer_form':customer_form,
                         'p_order_form': p_order_form,
                         's_order_form': s_order_form,
@@ -270,11 +316,12 @@ def sb_add(request):
                   })
     else:
         customer_form = CustomerForm()
-        p_order_form = Product_OrderForm()
+        p_order_form = Product_OrderForm(initial={'product': product})
+        
         s_order_form = Service_OrderForm()
         return render(request, 'sb/sb_add.html',
                   {
-                        'title': '新增',
+                        'title': title,
                         'customer_form':customer_form,
                         'p_order_form': p_order_form,
                         's_order_form': s_order_form,
@@ -319,7 +366,7 @@ def sb_reorder(request,id):
                         total_price = p_cd['total_price'],
                         paymethod =paymtd,
                         payaccount = p_cd['payaccount'],
-                        orderDate = p_cd['orderDate'],
+                        #orderDate = p_cd['orderDate'],
                         note = p_cd['note']
                         )
                 #order.save()
@@ -345,7 +392,7 @@ def sb_reorder(request,id):
                                 payaccount = s_cd['payaccount'],
                                 partner = s_cd['partner'],
                                 sprice2Partner = s_cd['sprice2Partner'],
-                                orderDate = p_cd['orderDate'],
+                                #orderDate = p_cd['orderDate'],
                                 
                                 snote = s_cd['snote']
                             )
@@ -424,7 +471,7 @@ def sb_reorder(request,id):
 
 
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
-def sb_remove(request):
+def sb_remove(request,id):
     if request.POST:
         name = request.POST.get('name', None)
         pid = request.POST.get('pid', None)
@@ -456,6 +503,6 @@ def sb_remove(request):
         })
 
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
-def sb_remove_id(request, id):
+def sb_remove_id(request,id, pid):
     return HttpResponse('this is remove_id page.')
 

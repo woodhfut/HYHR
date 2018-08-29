@@ -13,6 +13,7 @@ class CustomerForm(ModelForm):
     class Meta:
         model = Customer
         fields = '__all__'
+        exclude={'status',}
         labels = {
                 'name':_('姓名'),
                 'pid':_('身份证号'),
@@ -45,6 +46,7 @@ class CustomerForm(ModelForm):
             phone = phone.strip()
             if len(phone) != 11:
                 raise forms.ValidationError(_('手机号码必须为11位.'), code=_('invalid_length'))
+        return phone
 
 class Product_OrderForm(ModelForm):
     def clean_validTo(self):
@@ -58,15 +60,17 @@ class Product_OrderForm(ModelForm):
         base = self.cleaned_data.get('product_base', 0.0)
         if base < 0:
             raise forms.ValidationError(_('基数必须为正数.'), code=_('invalid_value'))
+        return base
 
     def clean_total_price(self):
-        base = self.cleaned_data.get('total_price', 0.0)
-        if base < 0:
+        tp = self.cleaned_data.get('total_price', 0.0)
+        if tp < 0:
             raise forms.ValidationError(_('总价必须为正数.'), code=_('invalid_value'))     
+        return tp
 
     class Meta:
         model = Product_Order
-        exclude =['customer']
+        exclude =['customer','orderDate']
         labels = {
                 'product':_('业务名称'),
                 'orderType':_('业务类型'),
@@ -77,7 +81,7 @@ class Product_OrderForm(ModelForm):
                 'total_price':_('总价'),
                 'paymethod':_('支付方式'),
                 'payaccount':_('支付账户'),
-                'orderDate':_('下单日期'),
+                #'orderDate':_('下单日期'),
                 'note':_('备注'),
                 
             }
@@ -96,10 +100,10 @@ class Service_OrderForm(ModelForm):
         return cdt
     
     def clean_stotal_price(self):
-        base = self.cleaned_data.get('stotal_price', 0.0)
-        if base < 0:
+        tp = self.cleaned_data.get('stotal_price', 0.0)
+        if tp < 0:
             raise forms.ValidationError(_('总价必须为正数.'), code=_('invalid_value'))     
-
+        return tp
     class Meta:
         model = Service_Order
         fields=['svalidFrom', 'svalidTo', 'stotal_price', 'paymethod','payaccount','partner','sprice2Partner','snote']
@@ -111,7 +115,7 @@ class Service_OrderForm(ModelForm):
                 'stotal_price':_('总价'),
                 'paymethod':_('支付方式'),
                 'payaccount':_('支付账户'),
-                'orderDate':_('下单日期'),
+                #'orderDate':_('下单日期'),
                 'partner':_('合作伙伴'),
                 'sprice2Partner':_('应给合伙人费用'),
                 'snote':_('备注'),

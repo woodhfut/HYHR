@@ -22,18 +22,24 @@ class Partner(models.Model):
     def __str__(self):
         return self.name
 
+class CustomerStatus(models.Model):
+    name = models.CharField(max_length = 20)
+    value = models.PositiveSmallIntegerField()
+
+    def __str__(self):
+        return self.name + '(' + str(self.value) + ')'
 
 class Customer(models.Model):
     name = models.CharField(max_length = 30)
-    pid = models.CharField(max_length=18, unique=True)
-    phone = models.CharField(max_length = 120) #; seperated, could save 10 cell phone numbers
+    pid = models.CharField(max_length=18)
+    phone = models.CharField(max_length = 11) 
     Hukou_Type = (
         ('C','城市'),
         ('N','农村'),
         )
 
     hukou = models.CharField(max_length = 8, choices=Hukou_Type)
-    status = models.BooleanField(default=True)
+    status = models.ForeignKey(CustomerStatus, on_delete=models.CASCADE, default =0)
     wechat = models.CharField(max_length = 50, null= True, blank=True)   
     introducer = models.CharField(max_length = 30, null=True, blank=True)
     note = models.CharField(max_length = 50, null= True, blank=True)
@@ -43,6 +49,7 @@ class Customer(models.Model):
 
 class Product(models.Model):
     name = models.CharField(max_length = 30)
+    value = models.PositiveSmallIntegerField( default=1)
     lowest_baseline = models.FloatField()
     customers = models.ManyToManyField(Customer, through='Product_Order')
     validFrom = models.DateField()
@@ -66,7 +73,7 @@ class Service_Order(models.Model):
     paymethod = models.ForeignKey(PayMethod, on_delete= models.CASCADE)
     payaccount = models.CharField(max_length = 30)
     
-    orderDate = models.DateField(default=timezone.now())
+    orderDate = models.DateField(auto_now=True)
     
     partner = models.ForeignKey(Partner, on_delete=models.CASCADE,null=True, blank=True)
     sprice2Partner = models.FloatField(null=True, blank=True, default=0)
@@ -115,7 +122,7 @@ class Product_Order(models.Model):
     paymethod = models.ForeignKey(PayMethod, on_delete= models.CASCADE)
     payaccount = models.CharField(max_length = 30)
     
-    orderDate = models.DateField(default=timezone.now())
+    orderDate = models.DateField(auto_now=True)
 
     #partner = models.ForeignKey(Partner, on_delete=models.CASCADE, null = True, blank=True)
     #price2Partner = models.FloatField(null=True,blank=True, default=0)
