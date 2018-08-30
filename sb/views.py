@@ -6,8 +6,9 @@ from django.contrib.auth.views import login_required
 from django.contrib.auth.decorators import user_passes_test, permission_required
 from django.db import transaction
 from .forms import QueryForm, CustomerForm, Product_OrderForm, Service_OrderForm
-from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, PayMethod, CustomerStatus
+from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, PayMethod
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from .Utils import ProductCode, CustomerStatusCode
 import logging
 logger = logging.getLogger(__name__)
 
@@ -131,7 +132,7 @@ def sb_query(request):
                           })
             if form.is_valid():
                 try:
-                    result = Product_Order.objects.filter(customer__status__value__gt = 0).order_by('-id')
+                    result = Product_Order.objects.filter(customer__status__gt = 0).order_by('-id')
                     
                     if name and len(name.strip()) > 0:
                 
@@ -186,8 +187,8 @@ def sb_query(request):
                       })
 
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
-def sb_add(request, id):
-    product = Product.objects.get(value=id)
+def sb_add(request, code):
+    product = Product.objects.get(code=code)
     title = '新增{}'.format(product.name)
     if request.POST:
         customer_form = CustomerForm(request.POST)
@@ -200,20 +201,21 @@ def sb_add(request, id):
             try:
                 with transaction.atomic():
                     #use the product from id, ignore what is selected.
-                    statusvalue = 0
-                    if product.value == 1:#sb
-                        statusvalue = 1
-                    elif product.value == 2:#gjj
-                        statusvalue = 2
+                    statusvalue = CustomerStatusCode.Disabled
+                    if product.code == ProductCode.SB.value:#sb
+                        statusvalue = CustomerStatusCode.SB
+                    elif product.code == ProductCode.GJJ.value:#gjj
+                        statusvalue = CustomerStatusCode.GJJ
+                    elif product.code == ProductCode.OTHER.value:
+                        statusvalue = CustomerStatusCode.OTHER
 
-                    status = CustomerStatus.objects.get(value=statusvalue)
                     customer, created = Customer.objects.get_or_create(
                         pid = c_cd['pid'],
                         defaults = {
                             'name' : c_cd['name'],
                             'phone' : c_cd['phone'],
                             'hukou' : c_cd['hukou'],
-                            'status': status,
+                            'status': statusvalue.value,
                             'wechat' : c_cd['wechat'],
                             'introducer' : c_cd['introducer'],
                             'note' : c_cd['note']
@@ -230,9 +232,8 @@ def sb_add(request, id):
                                     'dup_pid_error':'错误:已经存在身份证号为{},姓名为{}的客户, 请重新确认填写的身份证号是否正确.'.format(c_cd['pid'], customer.name),
                                     'year':datetime.now().year    
                             })
-                        newStaValue = customer.status.value | statusvalue
-                        newSta = CustomerStatus.objects.get(value=newStaValue)
-                        customer.status = newSta
+                        newStaValue = customer.status | statusvalue.value
+                        customer.status = newStaValue
                         customer.save()
                     
                     otName = p_cd['orderType']
@@ -303,6 +304,7 @@ def sb_add(request, id):
             return render(request, 'sb/add_success.html',
                   {
                         'title': '添加成功',
+                        'code':code,
                         'year':datetime.now().year,    
                   })
         else:
@@ -330,14 +332,14 @@ def sb_add(request, id):
 
 
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
-def sb_reorder(request,id):
+def sb_reorder(request,code,pid):
 
-    customer = get_object_or_404(Customer, pid=id)
-
+    customer = get_object_or_404(Customer, pid=pid)
+    product = Product.objects.get(code=code)
     if request.POST:
         p_order_form = Product_OrderForm(request.POST)
         checkServiceFee = request.POST.get('chkServiceFee',False)
-        latestsrecs = Service_Order.objects.filter(customer__pid = id).order_by('-svalidTo')
+        latestsrecs = Service_Order.objects.filter(customer__pid = pid).order_by('-svalidTo')
         latestsvcRec = None
         if len(latestsrecs) > 0:
             latestsvcRec = latestsrecs[0]
@@ -347,8 +349,8 @@ def sb_reorder(request,id):
         if p_order_form.is_valid():
             p_cd = p_order_form.cleaned_data
             try:
-                productName = p_cd['product']
-                product = Product.objects.get(name = productName)
+                # productName = p_cd['product']
+                # product = Product.objects.get(name = productName)
 
                 paymthdname = p_cd['paymethod']
                 paymtd = PayMethod.objects.get(name=paymthdname)
@@ -404,7 +406,7 @@ def sb_reorder(request,id):
                             
                             return render(request, 'sb/sb_reorder.html',
                             {
-                                'title': '续费',
+                                'title': '{}续费'.format(product.name),
                                 'customer':customer,
                                 'p_order_form': p_order_form,
                                 's_order_form': s_order_form,
@@ -416,7 +418,7 @@ def sb_reorder(request,id):
                     else:
                         return render(request, 'sb/sb_reorder.html',
                             {
-                                'title': '续费',
+                                'title': '{}续费'.format(product.name),
                                 'customer':customer,
                                 'p_order_form': p_order_form,
                                 's_order_form': s_order_form,
@@ -436,14 +438,14 @@ def sb_reorder(request,id):
                 })
             return render(request, 'sb/reorder_success.html',
             {
-                'title':'续费成功!',
+                'title':'{}续费成功!'.format(product.name),
                 'year':datetime.now().year
             })
         else:
             s_order_form = Service_OrderForm(request.POST)            
             return render(request, 'sb/sb_reorder.html',
                             {
-                                'title': '续费',
+                                'title': '{}续费'.format(product.name),
                                 'customer':customer,
                                 'p_order_form': p_order_form,
                                 's_order_form': s_order_form,
@@ -452,16 +454,17 @@ def sb_reorder(request,id):
                                 'year':datetime.now().year
                                 })
     else:
-        p_order_form = Product_OrderForm()
+        
+        p_order_form = Product_OrderForm(initial={'product': product})
         s_order_form = Service_OrderForm()    
-        latestsrecs = Service_Order.objects.filter(customer__pid = id).order_by('-svalidTo')
+        latestsrecs = Service_Order.objects.filter(customer__pid = pid).order_by('-svalidTo')
         latestsvcRec = None
         if len(latestsrecs) > 0:
             latestsvcRec = latestsrecs[0]
         
         return render(request, 'sb/sb_reorder.html',
                     {
-                        'title': '续费',
+                        'title': '{}续费'.format(product.name),
                         'customer':customer,
                         'p_order_form': p_order_form,
                         's_order_form': s_order_form,
@@ -471,7 +474,7 @@ def sb_reorder(request,id):
 
 
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
-def sb_remove(request,id):
+def sb_remove(request,code):
     if request.POST:
         name = request.POST.get('name', None)
         pid = request.POST.get('pid', None)
@@ -503,6 +506,6 @@ def sb_remove(request,id):
         })
 
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
-def sb_remove_id(request,id, pid):
+def sb_remove_id(request,code, pid):
     return HttpResponse('this is remove_id page.')
 

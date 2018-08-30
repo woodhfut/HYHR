@@ -22,12 +22,12 @@ class Partner(models.Model):
     def __str__(self):
         return self.name
 
-class CustomerStatus(models.Model):
-    name = models.CharField(max_length = 20)
-    value = models.PositiveSmallIntegerField()
+# class CustomerStatus(models.Model):
+#     name = models.CharField(max_length = 20)
+#     value = models.PositiveSmallIntegerField()
 
-    def __str__(self):
-        return self.name + '(' + str(self.value) + ')'
+#     def __str__(self):
+#         return self.name + '(' + str(self.value) + ')'
 
 class Customer(models.Model):
     name = models.CharField(max_length = 30)
@@ -39,7 +39,7 @@ class Customer(models.Model):
         )
 
     hukou = models.CharField(max_length = 8, choices=Hukou_Type)
-    status = models.ForeignKey(CustomerStatus, on_delete=models.CASCADE, default =0)
+    status = models.PositiveSmallIntegerField(default=0)
     wechat = models.CharField(max_length = 50, null= True, blank=True)   
     introducer = models.CharField(max_length = 30, null=True, blank=True)
     note = models.CharField(max_length = 50, null= True, blank=True)
@@ -49,7 +49,7 @@ class Customer(models.Model):
 
 class Product(models.Model):
     name = models.CharField(max_length = 30)
-    value = models.PositiveSmallIntegerField( default=1)
+    code = models.PositiveSmallIntegerField( default=1)
     lowest_baseline = models.FloatField()
     customers = models.ManyToManyField(Customer, through='Product_Order')
     validFrom = models.DateField()

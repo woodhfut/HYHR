@@ -7,9 +7,9 @@ urlpatterns = [
     url(r'^$', views.sb_index, name='sb_index'),
     url(r'^sb(?P<id>[0-9]+)/$', views.sb_subsb, name='sb_subsb'),
     url(r'^query/$', views.sb_query, name='sb_query'),
-    url(r'^add/(?P<id>[1-2])/$', views.sb_add, name='sb_add'),
-    url(r'^reorder/(?P<id>(\d{6})(\d{4})(\d{2})(\d{2})(\d{3})([0-9]|X))/$', views.sb_reorder, name='sb_reorder'),
-    url(r'^remove/(?P<id>[1-2])/$', views.sb_remove, name='sb_remove'),
-    url(r'^remove/(?P<id>[1-2])/(?P<pid>(\d{6})(\d{4})(\d{2})(\d{2})(\d{3})([0-9]|X))/$', views.sb_remove_id, name='sb_reorder_id'),
+    url(r'^add/(?P<code>[1-2])/$', views.sb_add, name='sb_add'),
+    url(r'^reorder/(?P<code>[1-2])/(?P<pid>(\d{6})(\d{4})(\d{2})(\d{2})(\d{3})([0-9]|X))/$', views.sb_reorder, name='sb_reorder'),
+    url(r'^remove/(?P<code>[1-2])/$', views.sb_remove, name='sb_remove'),
+    url(r'^remove/(?P<code>[1-2])/(?P<pid>(\d{6})(\d{4})(\d{2})(\d{2})(\d{3})([0-9]|X))/$', views.sb_remove_id, name='sb_reorder_id'),
 
 ]

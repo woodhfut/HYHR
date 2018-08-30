@@ -112,7 +112,7 @@
                         <td>{{rst.validTo.year}}-{{rst.validTo.month|stringformat:"02d"}}-{{rst.validTo.day|stringformat:"02d"}}</td>
                         <td>{{rst.orderDate}}</td>   
                         <td>{{rst.customer.status}}</td>
-                        <td><a href="/sb/reorder/{{rst.customer.pid}}">{{rst.product.name}}续费</a></td>
+                        <td><a href="/sb/reorder/{{rst.product.code}}/{{rst.customer.pid}}/">{{rst.product.name}}续费</a></td>
                     </tr>
                 {% endfor %}
             </tbody>
