@@ -1,0 +1,21 @@
+{% extends 'HYHR/layout.html' %}
+
+{% block content %}
+
+<h3>{{title}}</h3>
+<form class="form-horizontal" role="form" method="POST">
+    {% csrf_token %}
+    <div class="form-group">
+            <label class="col-sm-2 control-label">姓名：</label>
+            <label class="col-sm-2 control-label" >{{cname}}</label>      
+
+            <label class="col-sm-2 control-label">身份证号：</label>
+            <label class="col-sm-2 control-label" >{{cpid}}</labe>
+    </div>
+    <div class="form-group">
+        <div class="col-sm-offset-1 col-sm-10">
+            <button type="submit" class="btn btn-primary">确认</button>
+        </div>
+    </div>
+</form>
+{% endblock %}

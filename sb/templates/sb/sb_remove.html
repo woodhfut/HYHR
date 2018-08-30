@@ -11,14 +11,14 @@
         <input type="hidden" name="next" value="/">
     {% endif %}
 	<div class="form-group">
-		<label for="firstname" class="col-sm-2 control-label">姓名：</label>
+		<label for="name" class="col-sm-2 control-label">姓名：</label>
 		<div class="col-sm-4">
-			<input type="text" class="form-control" id="name", name="name" 
+			<input type="text" class="form-control" id="name" name="name" value="{{cname}}"
 				   placeholder="请输入名字">
         </div>
-        <label for="lastname" class="col-sm-2 control-label">身份证号：</label>
+        <label for="pid" class="col-sm-2 control-label">身份证号：</label>
 		<div class="col-sm-4">
-			<input type="text" class="form-control" id="pid", name="pid" 
+			<input type="text" class="form-control" id="pid" name="pid" value="{{cpid}}" 
 				   placeholder="请输入身份证号">
 		</div>
 	</div>
@@ -36,7 +36,40 @@
     </div>
     
     {% if customers %}
-        {{customers.as_table}}
+    <hr />
+    <table class="table table-hover">
+
+            <thead>
+                <tr>
+                    <th>姓名</th>
+                    <th>身份证号</th>
+                    <th>手机号</th>
+                    <th>户口性质</th>
+                    <th>状态</th>
+                    <th>微信</th>
+                    <th>介绍人</th>
+                    <th>备注</th>
+                    <th>减员</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for customer in customers%}
+                    <tr>
+                        <td>{{customer.name}}</td>
+                        <td>{{customer.pid}}</td>
+                        <td>{{customer.phone}}</td>
+                        <td>{{customer.get_hukou_display}}</td>
+                        <td>{{customer.status}}</td>
+                        <td>{{customer.wechat}}</td>
+                        <td>{{customer.introducer}}</td>
+                        <td>{{customer.note}}</td>
+                        <td><a href="{{request.path}}{{customer.pid}}">减员</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+            </table>
+        </form>
+        
     {% endif %}
 
 </form>

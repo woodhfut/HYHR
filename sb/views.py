@@ -96,9 +96,9 @@ def sb_query(request):
                       'form':form,
                       'year': datetime.now().year
                   })
-    else:
-        
+    else:        
         form = QueryForm()
+        title = '查询'
         if 'name' in request.GET or \
             'pid' in request.GET or \
             'dateFrom' in request.GET or \
@@ -160,7 +160,7 @@ def sb_query(request):
                 
                 return render(request,'sb/sb_query.html',
                           {
-                              'title': 'Query',
+                              'title': title,
                               'pagecount': pagecount,
                               'collapse': collapse,
                               'result': rst,
@@ -170,7 +170,7 @@ def sb_query(request):
             else:
                 return render(request,'sb/sb_query.html',
                       {
-                          'title': 'Query',
+                          'title': title,
                           'pagecount': pagecount,
                           'collapse': collapse,
                           'form':form,
@@ -179,7 +179,7 @@ def sb_query(request):
         else:
             return render(request,'sb/sb_query.html',
                       {
-                          'title': 'Query',
+                          'title': title,
                           'pagecount': 15,
                           'collapse':1,
                           'form':form,
@@ -475,6 +475,8 @@ def sb_reorder(request,code,pid):
 
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
 def sb_remove(request,code):
+    product = Product.objects.get(code=code)
+    title = '{}减员'.format(product.name)
     if request.POST:
         name = request.POST.get('name', None)
         pid = request.POST.get('pid', None)
@@ -482,30 +484,94 @@ def sb_remove(request,code):
         if not name and not pid:
             return render(request, 'sb/sb_remove.html',
             {
-                'title': '减员',
+                'title': title,
                 'error':'错误：姓名和身份证号至少提供一项.',
 
             })
         else:
-            customers = Customer.objects.all()
+            customers = Customer.objects.filter(status__gt = CustomerStatusCode.Disabled.value)
+            productOrders = Product_Order.objects.filter(product__code = code)
+
             if name:
                 customers = customers.filter(name__iexact = name)
+                productOrders = productOrders.filter(customer__name__iexact=name)
             if pid:
                 customers = customers.filter(pid = pid)
+                productOrders = productOrders.filter(customer__pid__iexact = pid)
             
-            return render(request, 'sb/sb_remove.html',
-            {
-                'title': '减员',
-                'customers': customers[0],
 
-            })
+            if customers.exists():
+                if productOrders.exists():
+                    for cst in customers:
+                        if not productOrders.filter(customer__pid__iexact = cst.pid).exists():
+                            customers = customers.exclude(pid = cst.pid)
+
+                    return render(request, 'sb/sb_remove.html',
+                    {
+                        'title': title,
+                        'cname':name,
+                        'cpid':pid,
+                        'customers': customers
+                    })
+                else:
+                    return render(request, 'sb/sb_remove.html',
+                    {
+                        'title': title,
+                        'cname':name,
+                        'cpid':pid,
+                        'error':'错误：该客户没有{}订单.'.format(product.name),
+
+                    })
+            else:
+                return render(request, 'sb/sb_remove.html',
+                {
+                    'title': title,
+                    'cname':name,
+                    'cpid':pid,
+                    'error':'错误：该客户不存在或者已经减员.',
+
+                })
     else:
         return render(request, 'sb/sb_remove.html',
         {
-            'title': '减员',
+            'title': title,
         })
 
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
 def sb_remove_id(request,code, pid):
-    return HttpResponse('this is remove_id page.')
+    product = Product.objects.get(code = code)
+    customer = Customer.objects.get(pid=pid)
+    title = '确认{}减员'.format(product.name)
+    if request.POST:
+        cstatus2remove = CustomerStatusCode.Disabled
+        if product.code == ProductCode.SB.value:
+            cstatus2remove = CustomerStatusCode.SB
+        elif product.code == ProductCode.GJJ.value:
+            cstatus2remove = CustomerStatusCode.GJJ
+        elif product.code == ProductCode.OTHER.value:
+            cstatus2remove = CustomerStatusCode.OTHER
+        
+        try:
+            logger.info('{}-{}'.format(customer.status, cstatus2remove.value))
+            customer.status = customer.status^cstatus2remove.value
+            logger.info(customer.status)
+            customer.save()
+        except Exception as ex:
+            return HttpResponse('exception happend when remove customer: {}'.format(ex))
+        return render(request, 'sb/sb_remove_success.html',
+        {
+            'title':'成功减员',
+            'pname': product.name,
+            'cname': customer.name,
+            'cpid': customer.pid,
+            'code': code
+        })
+    else:
+        return render(request, 'sb/sb_remove_confirm.html',
+        {
+            'title':title,
+            'cname': customer.name,
+            'cpid': customer.pid
+        })
+        
 

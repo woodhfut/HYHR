@@ -1,8 +1,8 @@
 ﻿{% extends "HYHR/layout.html" %}
 
 {% block content %}
-<link rel="stylesheet" type="text/css" href="/static/admin/css/base.css" /> 
-<link rel="stylesheet" type="text/css" href="/static/admin/css/forms.css" /> 
+<!-- <link rel="stylesheet" type="text/css" href="/static/admin/css/base.css" /> 
+<link rel="stylesheet" type="text/css" href="/static/admin/css/forms.css" />  -->
 <script type="text/javascript" src="/admin/jsi18n/"></script>
 <script type="text/javascript" src="/static/admin/js/core.js"></script>
 <script type="text/javascript" src="/static/admin/js/vendor/jquery/jquery.js"></script>
@@ -79,7 +79,6 @@
         <hr />
         {% if result %}
         <table class="table table-hover">
-            <caption>查询结果</caption>
             <thead>
                 <tr>
                     <th>姓名</th>
@@ -112,7 +111,7 @@
                         <td>{{rst.validTo.year}}-{{rst.validTo.month|stringformat:"02d"}}-{{rst.validTo.day|stringformat:"02d"}}</td>
                         <td>{{rst.orderDate}}</td>   
                         <td>{{rst.customer.status}}</td>
-                        <td><a href="/sb/reorder/{{rst.product.code}}/{{rst.customer.pid}}/">{{rst.product.name}}续费</a></td>
+                        <td><a href="/sb/reorder/{{rst.product.code}}/{{rst.customer.pid}}/">{{rst.product.name}}续费</a><span>/</span><a href="/sb/remove/{{rst.product.code}}/{{rst.customer.pid}}">减员</a></td>
                     </tr>
                 {% endfor %}
             </tbody>

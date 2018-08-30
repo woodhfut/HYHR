@@ -7,17 +7,23 @@
     {% load staticfiles %}
     <link rel="stylesheet" type="text/css" href="{% static 'HYHR/content/bootstrap.min.css' %}" />
     <link rel="stylesheet" type="text/css" href="{% static 'HYHR/content/site.css' %}" />
+    <link rel="stylesheet" type="text/css" href="/static/admin/css/base.css" /> 
+    <link rel="stylesheet" type="text/css" href="/static/admin/css/forms.css" /> 
     <link rel="stylesheet" type="text/css" href="{% static 'HYHR/css/bootstrap.dropdown.hack.css'%}" />
     <script src="{% static 'HYHR/scripts/modernizr-2.6.2.js' %}"></script>
     
     <link rel="icon" href="{% static 'HYHR/img/favicon.ico' %}" mce_href="{% static 'HYHR/img/favicon.ico' %}" type="image/x-icon">
     <link rel="shortcut icon" href="{% static 'HYHR/img/favicon.ico' %}" mce_href="{% static 'HYHR/img/favicon.ico' %}" type="image/x-icon">
 
-
+<style type="text/css">
+        .navbar a{
+            font-size: 120%;
+        }
+</style> 
 </head>
 
 <body>
-    <div class="navbar navbar-default navbar-fixed-top">
+    <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
         <div class="container">
             <div class="navbar-header">
                 <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
@@ -36,7 +42,7 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a href="{% url 'sb:sb_index' %}">业务简介</a> </li>
-                            <li><a href="{% url 'sb:sb_query' %}">业务查询</a> </li>
+                            <li><a href="{% url 'sb:sb_query' %}"><span class="glyphicon glyphicon-search"></span>业务查询</a> </li>
                             {% if user.is_authenticated and user.is_superuser %}
                             <li class="offset-right dropdown">
                                     <a href="#" class="dropdown-toggle">社保<b class="caret"></b></a>
@@ -62,9 +68,9 @@
                 {% include 'HYHR/loginpartial.html' %}
             </div>
         </div>
-    </div>
+    </nav>
 
-    <div class="container body-content" style="margin:30px">    
+    <div class="container body-content" style="margin:70px">    
         {% block content %}{% endblock %}
         <hr/>
         <footer>
