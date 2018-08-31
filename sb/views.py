@@ -300,7 +300,11 @@ def sb_add(request, code):
                             })
 
             except Exception as ex:
-                return HttpResponse('exception met during add new order. {}'.format(ex))
+                return render(request, 'HYHR/error.html',
+                {
+                    'errormessage': ex,
+                    'year':datetime.now().year
+                })
             return render(request, 'sb/add_success.html',
                   {
                         'title': '添加成功',
@@ -475,67 +479,75 @@ def sb_reorder(request,code,pid):
 
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
 def sb_remove(request,code):
-    product = Product.objects.get(code=code)
-    title = '{}减员'.format(product.name)
-    if request.POST:
-        name = request.POST.get('name', None)
-        pid = request.POST.get('pid', None)
+    try:
+        product = Product.objects.get(code=code)
+        title = '{}减员'.format(product.name)
+        if request.POST:
+            name = request.POST.get('name', None)
+            pid = request.POST.get('pid', None)
 
-        if not name and not pid:
-            return render(request, 'sb/sb_remove.html',
-            {
-                'title': title,
-                'error':'错误：姓名和身份证号至少提供一项.',
+            if not name and not pid:
+                return render(request, 'sb/sb_remove.html',
+                {
+                    'title': title,
+                    'error':'错误：姓名和身份证号至少提供一项.',
 
-            })
-        else:
-            customers = Customer.objects.filter(status__gt = CustomerStatusCode.Disabled.value)
-            productOrders = Product_Order.objects.filter(product__code = code)
+                })
+            else:
+                customers = Customer.objects.filter(status__gt = CustomerStatusCode.Disabled.value)
+                productOrders = Product_Order.objects.filter(product__code = code)
 
-            if name:
-                customers = customers.filter(name__iexact = name)
-                productOrders = productOrders.filter(customer__name__iexact=name)
-            if pid:
-                customers = customers.filter(pid = pid)
-                productOrders = productOrders.filter(customer__pid__iexact = pid)
-            
+                if name:
+                    customers = customers.filter(name__iexact = name)
+                    productOrders = productOrders.filter(customer__name__iexact=name)
+                if pid:
+                    customers = customers.filter(pid = pid)
+                    productOrders = productOrders.filter(customer__pid__iexact = pid)
+                
 
-            if customers.exists():
-                if productOrders.exists():
-                    for cst in customers:
-                        if not productOrders.filter(customer__pid__iexact = cst.pid).exists():
-                            customers = customers.exclude(pid = cst.pid)
+                if customers.exists():
+                    if productOrders.exists():
+                        for cst in customers:
+                            if not productOrders.filter(customer__pid__iexact = cst.pid).exists():
+                                customers = customers.exclude(pid = cst.pid)
 
-                    return render(request, 'sb/sb_remove.html',
-                    {
-                        'title': title,
-                        'cname':name,
-                        'cpid':pid,
-                        'customers': customers
-                    })
+                        return render(request, 'sb/sb_remove.html',
+                        {
+                            'title': title,
+                            'cname':name,
+                            'cpid':pid,
+                            'customers': customers
+                        })
+                    else:
+                        return render(request, 'sb/sb_remove.html',
+                        {
+                            'title': title,
+                            'cname':name,
+                            'cpid':pid,
+                            'error':'错误：该客户没有{}订单.'.format(product.name),
+
+                        })
                 else:
                     return render(request, 'sb/sb_remove.html',
                     {
                         'title': title,
                         'cname':name,
                         'cpid':pid,
-                        'error':'错误：该客户没有{}订单.'.format(product.name),
+                        'error':'错误：该客户不存在或者已经减员.',
 
                     })
-            else:
-                return render(request, 'sb/sb_remove.html',
+        else:
+            return render(request, 'sb/sb_remove.html',
+            {
+                'title': title,
+            })
+    except Exception as ex:
+        return render(request, 'HYHR/error.html',
                 {
-                    'title': title,
-                    'cname':name,
-                    'cpid':pid,
-                    'error':'错误：该客户不存在或者已经减员.',
-
+                    'errormessage': ex,
+                    'year':datetime.now().year
                 })
-    else:
-        return render(request, 'sb/sb_remove.html',
-        {
-            'title': title,
-        })
+    
 
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
 def sb_remove_id(request,code, pid):
@@ -557,7 +569,11 @@ def sb_remove_id(request,code, pid):
             logger.info(customer.status)
             customer.save()
         except Exception as ex:
-            return HttpResponse('exception happend when remove customer: {}'.format(ex))
+            return render(request, 'HYHR/error.html',
+                {
+                    'errormessage': ex,
+                    'year':datetime.now().year
+                })
         return render(request, 'sb/sb_remove_success.html',
         {
             'title':'成功减员',

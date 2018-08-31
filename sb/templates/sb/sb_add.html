@@ -92,7 +92,7 @@
                                     <label></label>
                                     {% endif %}
                                     {% if  dup_date_error  %}
-                                        {% if cfield.name == 'validTo'%}
+                                        {% if pfield.name == 'validTo'%}
                                         <label style="color: red">{{ dup_date_error }}</label>
                                         {% endif %}
                                     {% endif %}
@@ -133,7 +133,7 @@
                                     <label></label>
                                     {% endif %}
                                     {% if  dup_date_error  %}
-                                        {% if cfield.name == 'validTo'%}
+                                        {% if sfield.name == 'svalidTo'%}
                                         <label style="color: red">{{ dup_sdate_error }}</label>
                                         {% endif %}
                                     {% endif %}

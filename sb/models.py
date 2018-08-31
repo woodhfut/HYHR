@@ -131,3 +131,6 @@ class Product_Order(models.Model):
 
     def __str__(self):
         return self.customer.name + '(' + self.product.name + ':' + self.validFrom.strftime('%Y/%m/%d') + '--' + self.validTo.strftime('%Y/%m/%d') + ')'
+
+
+

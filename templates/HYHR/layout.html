@@ -41,19 +41,20 @@
                             业务<b class="caret"></b>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="{% url 'sb:sb_index' %}">业务简介</a> </li>
-                            <li><a href="{% url 'sb:sb_query' %}"><span class="glyphicon glyphicon-search"></span>业务查询</a> </li>
+                            <li><a href="{% url 'sb:sb_index' %}"><span class="glyphicon glyphicon-info-sign" style="padding-right: 20%"></span>业务简介</a> </li>
+                            <li><a href="{% url 'sb:sb_query' %}"><span class="glyphicon glyphicon-search" style="padding-right: 20%"></span>业务查询</a> </li>
                             {% if user.is_authenticated and user.is_superuser %}
                             <li class="offset-right dropdown">
-                                    <a href="#" class="dropdown-toggle">社保<b class="caret"></b></a>
+                                    <a href="#" class="dropdown-toggle"><span class="glyphicon glyphicon-heart-empty" style="padding-right: 20%"></span>社保<b class="caret"></b></a>
                                     <ul class="dropdown-menu">
                                         <li><a href="{% url 'sb:sb_add' 1 %}">新增</a> </li>
                                         <li><a href="{% url 'sb:sb_remove' 1 %}">减员</a></li>
+                                        <li><a href="{% url 'sb:sb_remove' 1 %}">对账</a></li>
                                     </ul>
                                   </li>
                             <li class="divider"></li>
                             <li class="offset-right dropdown">
-                                    <a href="#" class="dropdown-toggle">公积金<b class="caret"></b></a>
+                                    <a href="#" class="dropdown-toggle"><span class="glyphicon glyphicon-usd" style="padding-right: 20%"></span>公积金<b class="caret"></b></a>
                                     <ul class="dropdown-menu">
                                         <li><a href="{% url 'sb:sb_add' 2 %}">新增</a> </li>
                                         <li><a href="{% url 'sb:sb_remove' 2 %}">减员</a></li>
