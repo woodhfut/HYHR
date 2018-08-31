@@ -1,5 +1,6 @@
 
 from enum import Enum,unique
+from sb.models import Customer
 
 @unique
 class ProductCode(Enum):
@@ -21,3 +22,6 @@ class CustomerOperations(Enum):
     ADD = 1
     REORDER =2
     REMOVE = 3
+
+
+    

@@ -49,7 +49,7 @@
                                     <ul class="dropdown-menu">
                                         <li><a href="{% url 'sb:sb_add' 1 %}">新增</a> </li>
                                         <li><a href="{% url 'sb:sb_remove' 1 %}">减员</a></li>
-                                        <li><a href="{% url 'sb:sb_remove' 1 %}">对账</a></li>
+                                        <li><a href="{% url 'sb:sb_billcheck' 1 %}">对账</a></li>
                                     </ul>
                                   </li>
                             <li class="divider"></li>
@@ -58,6 +58,7 @@
                                     <ul class="dropdown-menu">
                                         <li><a href="{% url 'sb:sb_add' 2 %}">新增</a> </li>
                                         <li><a href="{% url 'sb:sb_remove' 2 %}">减员</a></li>
+                                        <li><a href="{% url 'sb:sb_billcheck' 2 %}">对账</a></li>
                                     </ul>
                             </li>
                             {% endif %}

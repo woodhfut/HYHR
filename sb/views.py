@@ -1,7 +1,7 @@
 from django.shortcuts import render, HttpResponseRedirect, redirect, get_object_or_404
 from django.http import HttpRequest, HttpResponse
 from django.template import RequestContext
-from datetime import datetime
+from datetime import datetime,date
 from django.contrib.auth.views import login_required
 from django.contrib.auth.decorators import user_passes_test, permission_required
 from django.db import transaction
@@ -9,6 +9,7 @@ from .forms import QueryForm, CustomerForm, Product_OrderForm, Service_OrderForm
 from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, PayMethod, Operations
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .Utils import ProductCode, CustomerStatusCode, CustomerOperations
+from calendar import monthrange
 import logging
 logger = logging.getLogger(__name__)
 
@@ -209,6 +210,8 @@ def sb_add(request, code):
                     elif product.code == ProductCode.OTHER.value:
                         statusvalue = CustomerStatusCode.OTHER
 
+                    existedCuStatus = statusvalue.value
+
                     customer, created = Customer.objects.get_or_create(
                         pid = c_cd['pid'],
                         defaults = {
@@ -232,9 +235,10 @@ def sb_add(request, code):
                                     'dup_pid_error':'错误:已经存在身份证号为{},姓名为{}的客户, 请重新确认填写的身份证号是否正确.'.format(c_cd['pid'], customer.name),
                                     'year':datetime.now().year    
                             })
+                        existedCuStatus = customer.status    
                         newStaValue = customer.status | statusvalue.value
                         customer.status = newStaValue
-                        customer.save()
+                        #customer.save()
                     
                     otName = p_cd['orderType']
                     ordertype = OrderType.objects.get(name=otName)
@@ -261,7 +265,7 @@ def sb_add(request, code):
                             'note' : p_cd['note']
                         },
                     )
-                    if not created:
+                    if not created and existedCuStatus != CustomerStatusCode.Disabled.value:
                         return render(request, 'sb/sb_add.html',
                             {
                                     'title':title,
@@ -288,7 +292,7 @@ def sb_add(request, code):
                         },
                     )
 
-                    if not created:
+                    if not created and existedCuStatus != CustomerStatusCode.Disabled.value:
                         return render(request, 'sb/sb_add.html',
                             {
                                     'title':title,
@@ -303,6 +307,7 @@ def sb_add(request, code):
                                     product = product,
                                     operation = CustomerOperations.ADD.value )
                     op.save()
+                    customer.save()
 
             except Exception as ex:
                 return render(request, 'HYHR/error.html',
@@ -578,6 +583,7 @@ def sb_remove_id(request,code, pid):
             cstatus2remove = CustomerStatusCode.OTHER
         
         try:
+            #todo: if client has ordered next month of product, you are not allowed to remove it. unless refund...
             logger.info('{}-{}'.format(customer.status, cstatus2remove.value))
             customer.status = customer.status^cstatus2remove.value
             logger.info(customer.status)
@@ -607,3 +613,44 @@ def sb_remove_id(request,code, pid):
         })
         
 
+@user_passes_test(lambda u: u.is_superuser, login_url='/login/')
+def sb_billcheck(request, code):
+    try:
+        month = datetime.now().month
+        product = Product.objects.get(code=code)
+        title = '{}月{}对账'.format(month, product.name)
+        cscode = CustomerStatusCode.Disabled
+        if code == ProductCode.SB.value:
+            cscode = CustomerStatusCode.SB
+        elif code == ProductCode.GJJ.value:
+            cscode = CustomerStatusCode.GJJ
+        elif code == ProductCode.OTHER.value:
+            cscode = CustomerStatusCode.OTHER
+
+        customers =[c for c in Customer.objects.filter(status__gt = CustomerStatusCode.Disabled.value) if c.status & cscode.value == cscode.value]
+
+        if len(customers):
+            today = date.today()
+            startdate = date(today.year, today.month, 1)
+            enddate = date(today.year, today.month, monthrange(today.year, today.month)[1])
+            logger.info('startdate:{}, enddate:{}'.format(startdate.strftime('%Y-%m-%d'), enddate.strftime('%Y-%m-%d')))
+            porders = Product_Order.objects.filter(product__code =code,validFrom__lte=startdate, validTo__gte=enddate, customer__in=customers)
+
+            return render(request, 'sb/sb_billcheck.html',
+            {
+                'title':title,
+                'porders': porders,
+            }) 
+        else:
+            return render(request, 'sb/sb_billcheck.html',
+            {
+                'title': title,
+                'message': '***当前户中没有社保客户,无需对账.***'
+            })
+
+    except Exception as ex:
+        return render(request, 'HYHR/error.html',
+        {
+            'errormessage': ex,
+            'year':datetime.now().year
+        })

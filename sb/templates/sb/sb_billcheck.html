@@ -1,0 +1,83 @@
+{% extends 'HYHR/layout.html' %}
+
+{% block content %}
+<h2>{{title}}</h2>
+<div class="row">
+    {% if message %}
+    <p class="col-sm-4" style="color:red">{{message}}</p>
+    {% endif %}
+
+    <p class="col-sm-12" style="color: skyblue"><b>说明：此处包含本月正常缴纳，但是下月尚未缴纳的客户. 下月已经缴纳的，请在“业务查询”中查看.</b></p>
+{% if porders %}
+<div class="table-responsive">
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>姓名</th>
+            <th>身份证号</th>
+            <th>手机号</th>
+            <th>微信</th>
+            <th>业务名称</th>
+            <th>所在区县</th>
+            <th>户口性质</th>
+            <th>基数</th>   
+            <th>状态</th>
+            <th>续费</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ord in porders %}
+            <tr>
+                <td>{{ord.customer.name}}</td>
+                <td>{{ord.customer.pid}}</td>
+                <td>{{ord.customer.phone}}</td>
+                <td>{{ord.customer.wechat}}</td>
+                <td>{{ord.product.name}}</td>
+                <td>{{ord.district.name}}</td>
+                <td>{{ord.customer.get_hukou_display}}</td>
+                <td>{{ord.product_base}}</td>        
+                <td>{{ord.customer.status}}</td>
+                <td><a href="/sb/reorder/{{ord.product.code}}/{{ord.customer.pid}}/">{{rst.product.name}}续费</a></td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+ <table>
+     <tbody>
+         <tr>
+             <td style="width:5%">
+                <select id="pagecount" onchange="pageCountChange()">
+                    <option value="2">2</option>
+                    <option value="15">15</option>
+                    <option value="30">30</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+             </td>
+             <td style="width:85%; text-align:center">
+                <span >
+                    {% if result.has_previous%}
+                    <a href="#" onclick="navigatetopagewithQuery(1)"><span class="glyphicon glyphicon-fast-backward"></span></a>
+                    <a href="#" onclick="navigatetopagewithQuery({{result.previous_page_number}})"><span class="glyphicon glyphicon-backward"></span></a>
+                    {% endif %}
+                    <span>
+                        Page {{result.number}} of {{result.paginator.num_pages}}
+                    </span>
+    
+                    {% if result.has_next %}
+                        <a href="#" onclick="navigatetopagewithQuery({{result.next_page_number}})"><span class="glyphicon glyphicon-forward"></span></a>
+                    <a href="#" onclick="navigatetopagewithQuery({{result.paginator.num_pages}})"><span class="glyphicon glyphicon-fast-forward"></a>
+                    {%endif%}
+                    
+                </span>
+             </td>
+             <td style="width:10%">
+                <span >Total {{result.paginator.count}} items</span>
+             </td>
+         </tr>
+     </tbody>
+ </table>                  
+</div>
+</div>
+{% endif %}
+{% endblock %}
