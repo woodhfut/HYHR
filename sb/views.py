@@ -6,9 +6,9 @@ from django.contrib.auth.views import login_required
 from django.contrib.auth.decorators import user_passes_test, permission_required
 from django.db import transaction
 from .forms import QueryForm, CustomerForm, Product_OrderForm, Service_OrderForm
-from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, PayMethod
+from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, PayMethod, Operations
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from .Utils import ProductCode, CustomerStatusCode
+from .Utils import ProductCode, CustomerStatusCode, CustomerOperations
 import logging
 logger = logging.getLogger(__name__)
 
@@ -298,6 +298,11 @@ def sb_add(request, code):
                                     'dup_sdate_error':'错误:此时间段已经存在{}订单.'.format(product.name),
                                     'year':datetime.now().year    
                             })
+                    #add info to operations table
+                    op = Operations(customer = customer, 
+                                    product = product,
+                                    operation = CustomerOperations.ADD.value )
+                    op.save()
 
             except Exception as ex:
                 return render(request, 'HYHR/error.html',
@@ -376,7 +381,9 @@ def sb_reorder(request,code,pid):
                         note = p_cd['note']
                         )
                 #order.save()
-                
+                op = Operations(customer = customer,
+                                            product = product,
+                                            operation = CustomerOperations.REORDER.value)
                 if not checkServiceFee:
                     #check whether service order exists.
                     s_order_form = Service_OrderForm(request.POST)
@@ -403,9 +410,11 @@ def sb_reorder(request,code,pid):
                                 snote = s_cd['snote']
                             )
                             #s_order.save()
+                            
                             with transaction.atomic():
                                 p_order.save()
                                 s_order.save()
+                                op.save()
                         else:
                             
                             return render(request, 'sb/sb_reorder.html',
@@ -432,7 +441,9 @@ def sb_reorder(request,code,pid):
                             })
                     
                 else:
-                    p_order.save()
+                    with transaction.atomic():    
+                        p_order.save()
+                        op.save()
 
             except Exception as ex:
                 return render(request, 'HYHR/error.html',
@@ -554,6 +565,9 @@ def sb_remove_id(request,code, pid):
     product = Product.objects.get(code = code)
     customer = Customer.objects.get(pid=pid)
     title = '确认{}减员'.format(product.name)
+    op = Operations(customer = customer, 
+                    product = product,
+                    operation = CustomerOperations.REMOVE.value)
     if request.POST:
         cstatus2remove = CustomerStatusCode.Disabled
         if product.code == ProductCode.SB.value:
@@ -567,7 +581,9 @@ def sb_remove_id(request,code, pid):
             logger.info('{}-{}'.format(customer.status, cstatus2remove.value))
             customer.status = customer.status^cstatus2remove.value
             logger.info(customer.status)
-            customer.save()
+            with transaction.atomic():
+                customer.save()
+                op.save()
         except Exception as ex:
             return render(request, 'HYHR/error.html',
                 {

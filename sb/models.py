@@ -132,5 +132,12 @@ class Product_Order(models.Model):
     def __str__(self):
         return self.customer.name + '(' + self.product.name + ':' + self.validFrom.strftime('%Y/%m/%d') + '--' + self.validTo.strftime('%Y/%m/%d') + ')'
 
+class Operations(models.Model):
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete = models.CASCADE)
+    oper_date = models.DateTimeField(auto_now=True)
+    operation = models.PositiveSmallIntegerField()
 
+    def __str__(self):
+        return self.customer.name + '(' + self.product.name + ':' + str(self.operation) + ':' +  self.oper_date.strftime('%Y/%m/%d %H:%M:%S') + ')'
 

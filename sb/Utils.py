@@ -14,3 +14,10 @@ class CustomerStatusCode(Enum):
     SB = 1
     GJJ = 2
     OTHER = 4
+
+
+@unique
+class CustomerOperations(Enum):
+    ADD = 1
+    REORDER =2
+    REMOVE = 3

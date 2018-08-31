@@ -52,7 +52,7 @@
                                     {% endif %}
                                     {% if  dup_pid_error  %}
                                         {% if cfield.name == 'pid'%}
-                                        <label style="color: red">{{ dup_pid }}</label>
+                                        <label style="color: red">{{ dup_pid_error }}</label>
                                         {% endif %}
                                     {% endif %}
                                     {% if cfield.help_text %}
