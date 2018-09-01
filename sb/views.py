@@ -523,16 +523,25 @@ def sb_remove(request,code):
                 if customers.exists():
                     if productOrders.exists():
                         for cst in customers:
-                            if not productOrders.filter(customer__pid__iexact = cst.pid).exists():
+                            if not productOrders.filter(customer__pid__iexact = cst.pid).exists() or cst.status & int(code) == CustomerStatusCode.Disabled.value:
                                 customers = customers.exclude(pid = cst.pid)
+                        if len(customers) > 0:
+                            return render(request, 'sb/sb_remove.html',
+                            {
+                                'title': title,
+                                'cname':name,
+                                'cpid':pid,
+                                'customers': customers
+                            })
+                        else:
+                            return render(request, 'sb/sb_remove.html',
+                            {
+                                'title': title,
+                                'cname':name,
+                                'cpid':pid,
+                                'error':'错误：该客户没有{}订单或者已经减员.'.format(product.name),
 
-                        return render(request, 'sb/sb_remove.html',
-                        {
-                            'title': title,
-                            'cname':name,
-                            'cpid':pid,
-                            'customers': customers
-                        })
+                            })
                     else:
                         return render(request, 'sb/sb_remove.html',
                         {
