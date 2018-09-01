@@ -6,7 +6,7 @@ from sb.models import Customer
 class ProductCode(Enum):
     SB = 1
     GJJ = 2
-    OTHER = 3
+    OTHER = 4
 
 
 @unique

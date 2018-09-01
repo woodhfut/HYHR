@@ -12,6 +12,11 @@
             <label class="col-sm-2 control-label">身份证号：</label>
             <label class="col-sm-2 control-label" >{{cpid}}</labe>
     </div>
+    {% if errormsg %}
+    <div class="form-group">
+        <label class="col-sm-offset-1 col-sm-10" style="color:red">{{errormsg}}</label>
+    </div>
+    {% endif %}
     <div class="form-group">
         <div class="col-sm-offset-1 col-sm-10">
             <button type="submit" class="btn btn-primary">确认</button>

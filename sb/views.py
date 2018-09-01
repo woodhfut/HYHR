@@ -136,18 +136,16 @@ def sb_query(request):
                     result = Product_Order.objects.filter(customer__status__gt = 0).order_by('-id')
                     
                     if name and len(name.strip()) > 0:
-                
                         result = result.filter(customer__name__icontains=name)
                     if pid and len(pid.strip())> 0:
-                
                         result = result.filter(customer__pid=pid)
-                    if dateFrom: 
-                
+                    if dateFrom:                 
                         result = result.filter(validTo__gte=dateFrom)
-                    if dateTo:
-                
+                    if dateTo:             
                         result = result.filter(validFrom__lte=dateTo)
                     
+                    result =[r for r in result if r.product.code & r.customer.status != CustomerStatusCode.Disabled.value]
+
                     paginator = Paginator(result, pagecount)
                     try:
                         rst = paginator.page(pageid)
@@ -155,7 +153,8 @@ def sb_query(request):
                         rst = paginator.page(1)
                     except EmptyPage:
                         rst = paginator.page(paginator.num_pages)
-                except:
+                except Exception as ex:
+                    logger.warn('Query get exception {}'.format(ex))
                     result = Product_Order.objects.none()
                     rst = Product_Order.objects.none()
                 
@@ -584,12 +583,26 @@ def sb_remove_id(request,code, pid):
         
         try:
             #todo: if client has ordered next month of product, you are not allowed to remove it. unless refund...
-            logger.info('{}-{}'.format(customer.status, cstatus2remove.value))
-            customer.status = customer.status^cstatus2remove.value
-            logger.info(customer.status)
-            with transaction.atomic():
-                customer.save()
-                op.save()
+            today = date.today()
+            startdate = date(today.year, today.month+1, 1)
+            enddate = date(today.year, today.month+1, monthrange(today.year, today.month+1)[1])
+
+            if Product_Order.objects.filter(product__code=code, customer__pid=pid, validFrom__lte=startdate, validTo__gte=enddate).exists():
+                logger.info('customer {} already has {} order for next month, should not remove now.'.format(customer.name, product.name))
+                return render(request, 'sb/sb_remove_confirm.html',
+                {
+                    'title' : title,
+                    'cname': customer.name,
+                    'cpid': customer.pid,
+                    'errormsg' : '错误：客户{}已经缴纳了下个月的{}费用，请先退费以后再减员.'.format(customer.name, product.name )
+                })
+            else:
+                logger.info('{}-{}'.format(customer.status, cstatus2remove.value))
+                customer.status = customer.status^cstatus2remove.value
+                logger.info(customer.status)
+                with transaction.atomic():
+                    customer.save()
+                    op.save()
         except Exception as ex:
             return render(request, 'HYHR/error.html',
                 {
@@ -620,11 +633,11 @@ def sb_billcheck(request, code):
         product = Product.objects.get(code=code)
         title = '{}月{}对账'.format(month, product.name)
         cscode = CustomerStatusCode.Disabled
-        if code == ProductCode.SB.value:
+        if product.code == ProductCode.SB.value:
             cscode = CustomerStatusCode.SB
-        elif code == ProductCode.GJJ.value:
+        elif product.code == ProductCode.GJJ.value:
             cscode = CustomerStatusCode.GJJ
-        elif code == ProductCode.OTHER.value:
+        elif product.code == ProductCode.OTHER.value:
             cscode = CustomerStatusCode.OTHER
 
         customers =[c for c in Customer.objects.filter(status__gt = CustomerStatusCode.Disabled.value) if c.status & cscode.value == cscode.value]
@@ -634,8 +647,14 @@ def sb_billcheck(request, code):
             startdate = date(today.year, today.month, 1)
             enddate = date(today.year, today.month, monthrange(today.year, today.month)[1])
             logger.info('startdate:{}, enddate:{}'.format(startdate.strftime('%Y-%m-%d'), enddate.strftime('%Y-%m-%d')))
-            porders = Product_Order.objects.filter(product__code =code,validFrom__lte=startdate, validTo__gte=enddate, customer__in=customers)
+            porders = Product_Order.objects.filter(product__code =code,  validFrom__lte=startdate, validTo__gte=enddate,customer__in=customers)
 
+            snextmonth = date(today.year, today.month+1, 1)
+            enextmonth = date(today.year, today.month+1, monthrange(today.year, today.month+1)[1])
+            for c in customers:
+                if Product_Order.objects.filter(customer=c, product__code=code, validFrom__lte=snextmonth, validTo__gte=enextmonth).exists():
+                    porders = porders.exclude(customer=c, product__code = code)
+                    
             return render(request, 'sb/sb_billcheck.html',
             {
                 'title':title,
@@ -645,7 +664,7 @@ def sb_billcheck(request, code):
             return render(request, 'sb/sb_billcheck.html',
             {
                 'title': title,
-                'message': '***当前户中没有社保客户,无需对账.***'
+                'message': '***当前户中没有{}客户,无需对账.***'.format(product.name)
             })
 
     except Exception as ex:
