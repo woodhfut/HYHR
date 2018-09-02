@@ -386,19 +386,20 @@ def sb_reorder(request,code,pid):
                 dstName = p_cd['district']
                 district = District.objects.get(name= dstName)
 
-                p_order = Product_Order(
+                p_order, created  = Product_Order.objects.get_or_create(
                         customer=customer, 
                         product=product,
                         validFrom = p_cd['validFrom'],
                         validTo = p_cd['validTo'],
                         district = district,
-                        product_base = p_cd['product_base'],
-                        total_price = p_cd['total_price'],
-                        paymethod =paymtd,
-                        payaccount = p_cd['payaccount'],
-                        #orderDate = p_cd['orderDate'],
-                        note = p_cd['note']
-                        )
+                        defaults={
+                            'product_base' : p_cd['product_base'],
+                            'total_price' : p_cd['total_price'],
+                            'paymethod' : paymtd,
+                            'payaccount' : p_cd['payaccount'],
+                            #orderDate = p_cd['orderDate'],
+                            'note' : p_cd['note']
+                        },)
                 #order.save()
                 op = Operations(customer = customer,
                                             product = product,
@@ -460,9 +461,11 @@ def sb_reorder(request,code,pid):
                             })
                     
                 else:
+                    customer.status = customer.status | product.code
                     with transaction.atomic():    
                         p_order.save()
                         op.save()
+                        customer.save()
 
             except Exception as ex:
                 return render(request, 'HYHR/error.html',
@@ -611,7 +614,15 @@ def sb_remove_id(request,code, pid):
             startdate = date(today.year, today.month+1, 1)
             enddate = date(today.year, today.month+1, monthrange(today.year, today.month+1)[1])
 
-            if Product_Order.objects.filter(product__code=code, customer__pid=pid, validFrom__lte=startdate, validTo__gte=enddate).exists():
+            if customer.status & cstatus2remove.value == CustomerStatusCode.Disabled.value:
+                return render(request, 'sb/sb_remove_confirm.html',
+                {
+                    'title' : title,
+                    'cname': customer.name,
+                    'cpid': customer.pid,
+                    'errormsg' : '错误：客户{}没有{}订单或者已经减员.'.format(customer.name, product.name )
+                })
+            elif Product_Order.objects.filter(product__code=code, customer__pid=pid, validFrom__lte=startdate, validTo__gte=enddate).exists():
                 logger.info('customer {} already has {} order for next month, should not remove now.'.format(customer.name, product.name))
                 return render(request, 'sb/sb_remove_confirm.html',
                 {
@@ -620,14 +631,7 @@ def sb_remove_id(request,code, pid):
                     'cpid': customer.pid,
                     'errormsg' : '错误：客户{}已经缴纳了下个月的{}费用，请先退费以后再减员.'.format(customer.name, product.name )
                 })
-            elif customer.status & cstatus2remove.value == CustomerStatusCode.Disabled.value:
-                return render(request, 'sb/sb_remove_confirm.html',
-                {
-                    'title' : title,
-                    'cname': customer.name,
-                    'cpid': customer.pid,
-                    'errormsg' : '错误：客户{}没有{}订单或者已经减员.'.format(customer.name, product.name )
-                })
+            
             else:
                 logger.info('{}-{}'.format(customer.status, cstatus2remove.value))
                 customer.status = customer.status^cstatus2remove.value
