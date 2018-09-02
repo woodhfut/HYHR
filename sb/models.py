@@ -73,7 +73,7 @@ class Service_Order(models.Model):
     paymethod = models.ForeignKey(PayMethod, on_delete= models.CASCADE)
     payaccount = models.CharField(max_length = 30)
     
-    orderDate = models.DateField(auto_now=True)
+    orderDate = models.DateField(auto_now_add=True)
     
     partner = models.ForeignKey(Partner, on_delete=models.CASCADE,null=True, blank=True)
     sprice2Partner = models.FloatField(null=True, blank=True, default=0)
@@ -81,7 +81,7 @@ class Service_Order(models.Model):
     snote = models.CharField(max_length = 100, null=True, blank=True)
 
     def __str__(self):
-        return self.customer.name + '(' + self.product.name + ':' + self.svalidFrom.strftime('%Y/%m/%d') + '--' + self.svalidTo.strftime('%Y/%m/%d') + ')'
+        return self.customer.name + '(' + self.product.name + ':' + self.svalidFrom.strftime('%Y-%m-%d') + '--' + self.svalidTo.strftime('%Y-%m-%d') + ')'
 
 class OrderType(models.Model):
     name = models.CharField(max_length=20)
@@ -122,7 +122,7 @@ class Product_Order(models.Model):
     paymethod = models.ForeignKey(PayMethod, on_delete= models.CASCADE)
     payaccount = models.CharField(max_length = 30)
     
-    orderDate = models.DateField(auto_now=True)
+    orderDate = models.DateField(auto_now_add=True)
 
     #partner = models.ForeignKey(Partner, on_delete=models.CASCADE, null = True, blank=True)
     #price2Partner = models.FloatField(null=True,blank=True, default=0)
@@ -130,14 +130,14 @@ class Product_Order(models.Model):
     note = models.CharField(max_length = 100, null=True, blank=True)
 
     def __str__(self):
-        return self.customer.name + '(' + self.product.name + ':' + self.validFrom.strftime('%Y/%m/%d') + '--' + self.validTo.strftime('%Y/%m/%d') + ')'
+        return self.customer.name + '(' + self.product.name + ':' + self.validFrom.strftime('%Y-%m-%d') + '--' + self.validTo.strftime('%Y-%m-%d') + ')'
 
 class Operations(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete = models.CASCADE)
-    oper_date = models.DateTimeField(auto_now=True)
+    oper_date = models.DateTimeField(auto_now_add=True)
     operation = models.PositiveSmallIntegerField()
 
     def __str__(self):
-        return self.customer.name + '(' + self.product.name + ':' + str(self.operation) + ':' +  self.oper_date.strftime('%Y/%m/%d %H:%M:%S') + ')'
+        return self.customer.name + '(' + self.product.name + ':' + str(self.operation) + ':' +  self.oper_date.strftime('%Y-%m-%d %H:%M:%S') + ')'
 

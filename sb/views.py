@@ -126,6 +126,7 @@ def sb_query(request):
             except:
                 collapse = 1
             
+           
             form = QueryForm({'name':name,
                           'pid':pid,
                           'dateFrom':dateFrom,
@@ -140,9 +141,9 @@ def sb_query(request):
                     if pid and len(pid.strip())> 0:
                         result = result.filter(customer__pid=pid)
                     if dateFrom:                 
-                        result = result.filter(validTo__gte=dateFrom)
+                        result = result.filter(validTo__gte=form.cleaned_data['dateFrom'])
                     if dateTo:             
-                        result = result.filter(validFrom__lte=dateTo)
+                        result = result.filter(validFrom__lte=form.cleaned_data['dateTo'])
                     
                     result =[r for r in result if r.product.code & r.customer.status != CustomerStatusCode.Disabled.value]
 
@@ -352,7 +353,7 @@ def sb_reorder(request,code,pid):
     if request.POST:
         p_order_form = Product_OrderForm(request.POST)
         checkServiceFee = request.POST.get('chkServiceFee',False)
-        latestsrecs = Service_Order.objects.filter(customer__pid = pid).order_by('-svalidTo')
+        latestsrecs = Service_Order.objects.filter(customer__pid = pid).order_by('-id')
         latestsvcRec = None
         if len(latestsrecs) > 0:
             latestsvcRec = latestsrecs[0]
