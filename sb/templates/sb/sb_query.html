@@ -122,8 +122,6 @@
                  <tr>
                      <td style="width:5%">
                         <select id="pagecount" onchange="pageCountChange()">
-                            <option value="2">2</option>
-                            <option value="15">15</option>
                             <option value="30">30</option>
                             <option value="50">50</option>
                             <option value="100">100</option>
@@ -136,7 +134,7 @@
                             <a href="#" onclick="navigatetopagewithQuery({{result.previous_page_number}})"><span class="glyphicon glyphicon-backward"></span></a>
                             {% endif %}
                             <span>
-                                Page {{result.number}} of {{result.paginator.num_pages}}
+                                第 {{result.number}} / {{result.paginator.num_pages}}页
                             </span>
             
                             {% if result.has_next %}
@@ -147,7 +145,7 @@
                         </span>
                      </td>
                      <td style="width:10%">
-                        <span >Total {{result.paginator.count}} items</span>
+                        <span >共 {{result.paginator.count}} 项</span>
                      </td>
                  </tr>
              </tbody>

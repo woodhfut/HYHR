@@ -8,7 +8,7 @@ from django.db import transaction
 from .forms import QueryForm, CustomerForm, Product_OrderForm, Service_OrderForm
 from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, PayMethod, Operations
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from .Utils import ProductCode, CustomerStatusCode, CustomerOperations
+from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, DEFAULT_PAGE_COUNT
 from calendar import monthrange
 import logging
 logger = logging.getLogger(__name__)
@@ -109,12 +109,12 @@ def sb_query(request):
             dateFrom = request.GET.get('dateFrom',None)
             dateTo = request.GET.get('dateTo',None)
             pageid = request.GET.get('page_id',1)
-            pagecount = request.GET.get('page_count',15)
+            pagecount = request.GET.get('page_count',DEFAULT_PAGE_COUNT)
             collapse = request.GET.get('collapse',1)
             try:
                 pagecount = int(pagecount)
             except:
-                pagecount = 15
+                pagecount = DEFAULT_PAGE_COUNT
             
             try:
                 pageid = int(pageid)
@@ -663,11 +663,41 @@ def sb_billcheck(request, code):
             for c in customers:
                 if Product_Order.objects.filter(customer=c, product__code=code, validFrom__lte=snextmonth, validTo__gte=enextmonth).exists():
                     porders = porders.exclude(customer=c, product__code = code)
-                    
+
+            pagecount = DEFAULT_PAGE_COUNT
+            pagenum = 1
+            if request.POST:
+                pagecount = request.POST.get('page_count', pagecount)
+                pagenum = request.POST.get('page_id', pagenum)
+
+                try:
+                    pagecount = int(pagecount)
+                except:
+                    pagecount = DEFAULT_PAGE_COUNT
+                try:
+                    pagenum = int(pagenum)
+                except:
+                    pagenum = 1
+            
+            if not len(porders):
+                return render(request, 'sb/sb_billcheck.html',
+                {
+                    'title': title,
+                    'message': '***当前户中所有客户已缴纳下月{},无需对账.***'.format(product.name)
+                })
+            paginator = Paginator(porders, pagecount)
+            try:
+                rst = paginator.page(pagenum)
+            except PageNotAnInteger:
+                rst = paginator.page(1)            
+            except EmptyPage:
+                rst = paginator.page(paginator.num_pages)
+
             return render(request, 'sb/sb_billcheck.html',
             {
                 'title':title,
-                'porders': porders,
+                'porders': rst,
+                'pagecount': pagecount
             }) 
         else:
             return render(request, 'sb/sb_billcheck.html',

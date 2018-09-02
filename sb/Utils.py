@@ -24,4 +24,5 @@ class CustomerOperations(Enum):
     REMOVE = 3
 
 
-    
+
+DEFAULT_PAGE_COUNT = 30    

@@ -3,11 +3,14 @@
 {% block content %}
 <h2>{{title}}</h2>
 <div class="row">
+        <p class="col-sm-12" style="color: skyblue"><b>说明：此处包含本月正常缴纳，但是下月尚未缴纳的客户. 下月已经缴纳的，请在“业务查询”中查看.</b></p>
+
     {% if message %}
+    <br />
     <p class="col-sm-4" style="color:red">{{message}}</p>
     {% endif %}
 
-    <p class="col-sm-12" style="color: skyblue"><b>说明：此处包含本月正常缴纳，但是下月尚未缴纳的客户. 下月已经缴纳的，请在“业务查询”中查看.</b></p>
+    
 {% if porders %}
 <div class="table-responsive">
 <table class="table table-hover">
@@ -42,13 +45,15 @@
         {% endfor %}
     </tbody>
 </table>
+<form action="." method="POST" role="form" class="form-horizontal">
+    {% csrf_token %}
+    <input type="hidden" id="page_count" name="page_count" />
+    <input type="hidden" id="page_id" name="page_id" />
  <table>
      <tbody>
          <tr>
              <td style="width:5%">
                 <select id="pagecount" onchange="pageCountChange()">
-                    <option value="2">2</option>
-                    <option value="15">15</option>
                     <option value="30">30</option>
                     <option value="50">50</option>
                     <option value="100">100</option>
@@ -56,28 +61,53 @@
              </td>
              <td style="width:85%; text-align:center">
                 <span >
-                    {% if result.has_previous%}
+                    {% if porders.has_previous%}
                     <a href="#" onclick="navigatetopagewithQuery(1)"><span class="glyphicon glyphicon-fast-backward"></span></a>
-                    <a href="#" onclick="navigatetopagewithQuery({{result.previous_page_number}})"><span class="glyphicon glyphicon-backward"></span></a>
+                    <a href="#" onclick="navigatetopagewithQuery({{porders.previous_page_number}})"><span class="glyphicon glyphicon-backward"></span></a>
                     {% endif %}
                     <span>
-                        Page {{result.number}} of {{result.paginator.num_pages}}
+                        第 {{porders.number}} / {{porders.paginator.num_pages}}页
                     </span>
     
-                    {% if result.has_next %}
-                        <a href="#" onclick="navigatetopagewithQuery({{result.next_page_number}})"><span class="glyphicon glyphicon-forward"></span></a>
-                    <a href="#" onclick="navigatetopagewithQuery({{result.paginator.num_pages}})"><span class="glyphicon glyphicon-fast-forward"></a>
+                    {% if porders.has_next %}
+                        <a href="#" onclick="navigatetopagewithQuery({{porders.next_page_number}})"><span class="glyphicon glyphicon-forward"></span></a>
+                    <a href="#" onclick="navigatetopagewithQuery({{porders.paginator.num_pages}})"><span class="glyphicon glyphicon-fast-forward"></a>
                     {%endif%}
                     
                 </span>
              </td>
              <td style="width:10%">
-                <span >Total {{result.paginator.count}} items</span>
+                <span >共 {{porders.paginator.count}} 项</span>
              </td>
          </tr>
      </tbody>
- </table>                  
+ </table>    
+</form>              
 </div>
 </div>
 {% endif %}
 {% endblock %}
+
+
+{% block scripts%}
+
+<script type="text/javascript">
+$(document).ready(function () {
+    $('#pagecount').val('{{pagecount}}');
+    
+});
+
+function pageCountChange()
+{
+   $('#page_count').val($('#pagecount').val());
+   $('form').submit();
+}
+function navigatetopagewithQuery(pageid)
+{
+    $('#page_id').val(pageid);
+    $('#page_count').val($('#pagecount').val());
+    $('form').submit();
+}
+</script>
+
+{%endblock%}
