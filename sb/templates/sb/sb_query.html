@@ -60,6 +60,19 @@
                                 {%for field in form%}{% if field.name == 'dateTo' %}<label class="validation-summary-errors">{%for error in field.errors%}{{error}}{%endfor%}</label>{%endif%}{%endfor%}
                             </div>
                        </div>
+                       <div class="form-group">
+                            <label class="col-sm-2 control-label" for="productName">业务类型: </label>
+                            <div class="col-sm-2" >
+                                {{form.productName}} 
+                                {%for field in form%}{% if field.name == 'productName' %}<label class="validation-summary-errors">{%for error in field.errors%}{{error}}{%endfor%}</label>{%endif%}{%endfor%}
+                            </div>
+
+                            <label class="col-sm-2 control-label" for="customerStatus">客户状态: </label>
+                            <div class="col-sm-2">
+                                {{form.customerStatus}}
+                                {%for field in form%}{% if field.name == 'customerStatus' %}<label class="validation-summary-errors">{%for error in field.errors%}{{error}}{%endfor%}</label>{%endif%}{%endfor%}
+                            </div>
+                       </div>
                     </div>
                 </div>
             </div>

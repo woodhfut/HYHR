@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import ugettext_lazy as _
 from django.forms import ModelForm
-from .models import Customer, Product_Order, Service_Order
+from .models import Customer, Product_Order, Service_Order, Product
 from django import forms
 from datetime import datetime, date
 from django.utils import timezone
@@ -146,7 +146,26 @@ class QueryForm(forms.Form):
                              widget=AdminDateWidget({
                                
                                'placeholder':'Date To',}))
+    PN_OPTIONS = (
+        (0, '全部'),
+        (1, '社保'),
+        (2, '公积金'),
+    )
+    productName = forms.IntegerField(required = False,
+                                widget= forms.Select(choices=PN_OPTIONS))
+
+    CN_OPTIONS =(
+        (0, '不包含减员客户'),
+        (1,'包含减员客户')
+    )
+    customerStatus = forms.IntegerField(required = False,
+                            widget= forms.Select(choices=CN_OPTIONS))
     
+    def __init__(self, *args, **kwargs):
+        super(QueryForm,self).__init__(*args, **kwargs)
+        #self.fields['productName'].widget.choices = Product.objects.all().values_list('id','name')
+        #self.fields['customerStatus'].widget.choices = Customer.objects.all().values_list('id','status')    
+
     def clean_name(self):
         cname = self.cleaned_data.get('name',None)
         return cname

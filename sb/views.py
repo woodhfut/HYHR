@@ -103,11 +103,15 @@ def sb_query(request):
         if 'name' in request.GET or \
             'pid' in request.GET or \
             'dateFrom' in request.GET or \
-            'dateTo' in request.GET:
+            'dateTo' in request.GET or \
+            'productName' in request.GET or \
+            'customerStatus' in request.GET:
             name = request.GET.get('name',None)
             pid = request.GET.get('pid',None)
             dateFrom = request.GET.get('dateFrom',None)
             dateTo = request.GET.get('dateTo',None)
+            prodName = request.GET.get('productName', 0)
+            cstatus = request.GET.get('customerStatus', 0)
             pageid = request.GET.get('page_id',1)
             pagecount = request.GET.get('page_count',DEFAULT_PAGE_COUNT)
             collapse = request.GET.get('collapse',1)
@@ -131,10 +135,15 @@ def sb_query(request):
                           'pid':pid,
                           'dateFrom':dateFrom,
                           'dateTo':dateTo,
+                          'productName': int(prodName), 
+                          'customerStatus': int(cstatus)
                           })
             if form.is_valid():
                 try:
-                    result = Product_Order.objects.filter(customer__status__gt = 0).order_by('-id')
+                    if int(cstatus) == 0:
+                        result = Product_Order.objects.filter(customer__status__gt = 0).order_by('-id')
+                    else:
+                        result = Product_Order.objects.order_by('-id')
                     
                     if name and len(name.strip()) > 0:
                         result = result.filter(customer__name__icontains=name)
@@ -145,7 +154,12 @@ def sb_query(request):
                     if dateTo:             
                         result = result.filter(validFrom__lte=form.cleaned_data['dateTo'])
                     
-                    result =[r for r in result if r.product.code & r.customer.status != CustomerStatusCode.Disabled.value]
+                    
+                    if int(prodName) != 0:
+                        result = result.filter(product__code = int(prodName))
+
+                    if int(cstatus) == 0:
+                        result =[r for r in result if r.product.code & r.customer.status != CustomerStatusCode.Disabled.value]
 
                     paginator = Paginator(result, pagecount)
                     try:
@@ -353,7 +367,7 @@ def sb_reorder(request,code,pid):
     if request.POST:
         p_order_form = Product_OrderForm(request.POST)
         checkServiceFee = request.POST.get('chkServiceFee',False)
-        latestsrecs = Service_Order.objects.filter(customer__pid = pid).order_by('-id')
+        latestsrecs = Service_Order.objects.filter(customer__pid = pid, product__code = code).order_by('-svalidTo')
         latestsvcRec = None
         if len(latestsrecs) > 0:
             latestsvcRec = latestsrecs[0]
@@ -415,13 +429,13 @@ def sb_reorder(request,code,pid):
                                 snote = s_cd['snote']
                             )
                             #s_order.save()
-                            
+                            customer.status = customer.status | product.code
                             with transaction.atomic():
                                 p_order.save()
                                 s_order.save()
                                 op.save()
-                        else:
-                            
+                                customer.save()
+                        else:                            
                             return render(request, 'sb/sb_reorder.html',
                             {
                                 'title': '{}续费'.format(product.name),
@@ -477,7 +491,7 @@ def sb_reorder(request,code,pid):
         
         p_order_form = Product_OrderForm(initial={'product': product})
         s_order_form = Service_OrderForm()    
-        latestsrecs = Service_Order.objects.filter(customer__pid = pid).order_by('-svalidTo')
+        latestsrecs = Service_Order.objects.filter(customer__pid = pid, product__code=code).order_by('-svalidTo')
         latestsvcRec = None
         if len(latestsrecs) > 0:
             latestsvcRec = latestsrecs[0]
@@ -605,6 +619,14 @@ def sb_remove_id(request,code, pid):
                     'cname': customer.name,
                     'cpid': customer.pid,
                     'errormsg' : '错误：客户{}已经缴纳了下个月的{}费用，请先退费以后再减员.'.format(customer.name, product.name )
+                })
+            elif customer.status & cstatus2remove.value == CustomerStatusCode.Disabled.value:
+                return render(request, 'sb/sb_remove_confirm.html',
+                {
+                    'title' : title,
+                    'cname': customer.name,
+                    'cpid': customer.pid,
+                    'errormsg' : '错误：客户{}没有{}订单或者已经减员.'.format(customer.name, product.name )
                 })
             else:
                 logger.info('{}-{}'.format(customer.status, cstatus2remove.value))
