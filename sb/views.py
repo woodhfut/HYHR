@@ -14,6 +14,7 @@ from wxpy import *
 import os
 from random import randint
 import threading
+import time
 import logging
 logger = logging.getLogger(__name__)
 
@@ -749,18 +750,19 @@ def sb_billcheck(request, code):
 wxpybot = None
 
 
-def setqrdownloaded():
-    logger.info('QR downloaded....')
-
 def checkQR(qrpath):
-    wxpybot = Bot(cache_path=True, qr_path=qrpath)
+    try:
+        wxpybot = Bot(cache_path=True, qr_path=qrpath)
+    except Exception as ex:
+        logger.warn('Error while generate QR for bot. {}'.format(ex))
+        
 
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
 def sb_pushclient(request, code):
     if request.POST:
         global wxpybot
         if not wxpybot:
-            qrpath = 'sb/QR.png'
+            qrpath = './static/HYHR/img/QR.png'
             if os.path.exists(qrpath):
                 try:
                     os.remove(qrpath)
@@ -770,15 +772,23 @@ def sb_pushclient(request, code):
             #thread to check qr.png is downloaded
             qrThread = threading.Thread(target=checkQR, args=(qrpath,))
             qrThread.start()
-            import time
-            time.sleep(15)
+            
+            retry = 20
+            while retry > 0:
+                if not os.path.exists(qrpath):
+                    time.sleep(1)
+                    retry-= 1
+
             if os.path.exists(qrpath):
                 return render(request, 'sb/pushclient.html',
                 {
                     'title': '发送微信信息',
                     'QR': qrpath,
+                    'getQR' : '1',
+                    
                 })
             else:
+                logger.error('still doesnot get QR after 20 sec. ')
                 return render(request, 'sb/pushclient.html',
                 {
                     'title': '发送微信信息',
@@ -788,11 +798,14 @@ def sb_pushclient(request, code):
             return render(request, 'sb/pushclient.html',
                 {
                     'title': '发送微信信息',
-                    'customers': ['Qiang'],
+                    'getQR' : '1',
+                    
+                    'customers': ['Qiang','abc'],
                 })
     else:        
         return render(request, 'sb/pushclient.html',
         {
             'title': '发送微信信息',
-            'getQR': '0'
+            'getQR': '0',
+            
         })

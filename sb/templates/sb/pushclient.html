@@ -19,8 +19,9 @@
         
 </form>
 {% if QR %}
-<label class="col-sm-2 control-label">Scan QR to login.</label>
-<img id="qrimg" name="qrimg" src="{{QR}}" />
+{% load staticfiles %}
+<label class="col-sm-2 control-label">{{QR}}</label>
+<img  style="width: 200px; height: 200px;" src="{% static 'HYHR/img/QR.png' %}" />
 {% endif %}
 
 {% if errormsg %}
@@ -43,13 +44,14 @@
                 </tr>
             </thead>
             <tbody>
-                {% for ord in porders %}
-                    <tr>
-                        <td>{{ord.customer.name}}</td>
-                        <td>{{ord.customer.pid}}</td>
-                        <td>{{ord.customer.phone}}</td>
-                        <td>{{ord.customer.wechat}}</td>
-                    </tr>
+                {% for c in customers %}
+                <td>c</td>
+                    <!-- <tr>
+                        <td>{{c.name}}</td>
+                        <td>{{c.pid}}</td>
+                        <td>{{c.phone}}</td>
+                        <td>{{c.wechat}}</td>
+                    </tr> -->
                 {% endfor %}
             </tbody>
         </table>
@@ -62,14 +64,19 @@
 <script type="text/javascript">
 $(document).ready(function () {
     $('#getQR').val('{{getQR}}');
-    
+    if('{{getQR}}' == '1')
+        $('#qrbtn').html('Send');
 });
 
 function QRbuttonClickFunction()
 {
-    $('#getQR').val('1');
-    $('#qrbtn').html("send");
-    $('form').submit()
+    if ($('#getQR').val() == '0')
+    {
+        $('#getQR').val('1');
+        $('#qrbtn').html("send");
+        $('form').submit()
+    }
+    
 }
 </script>
 {% endblock %}
