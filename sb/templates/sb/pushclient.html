@@ -1,0 +1,75 @@
+{% extends 'HYHR/layout.html' %}
+
+{% block content %}
+<h2>{{title}}</h2>
+
+<form class="form-horizontal" role="form" method="POST">
+    {% csrf_token %}
+    <div class="col-sm-10">
+        <label class="control-label">填写需要发送给客户的信息：</label>
+    </div>
+    <div class="col-sm-10">
+        <textarea class="col-sm-10" name=message id=message rows="5"></textarea>
+    </div>
+
+    <div class="col-sm-10">
+        <button id="qrbtn" type="button" class="btn btn-primary" onclick="QRbuttonClickFunction()">获取微信登陆二维码</button>
+        <input type="hidden" id="getQR" name="getQR" />
+    </div>
+        
+</form>
+{% if QR %}
+<label class="col-sm-2 control-label">Scan QR to login.</label>
+<img id="qrimg" name="qrimg" src="{{QR}}" />
+{% endif %}
+
+{% if errormsg %}
+    <label style="color: red"> {{errormsg}}</label>
+{% endif %}
+
+{% if outputmsg %}
+<p>{{outputmsg}}</p>
+{% endif %}
+
+{% if customers %}
+<div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>姓名</th>
+                    <th>身份证号</th>
+                    <th>手机号</th>
+                    <th>微信</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ord in porders %}
+                    <tr>
+                        <td>{{ord.customer.name}}</td>
+                        <td>{{ord.customer.pid}}</td>
+                        <td>{{ord.customer.phone}}</td>
+                        <td>{{ord.customer.wechat}}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+{% endif %}
+{% endblock %}
+
+
+{% block scripts%}
+
+<script type="text/javascript">
+$(document).ready(function () {
+    $('#getQR').val('{{getQR}}');
+    
+});
+
+function QRbuttonClickFunction()
+{
+    $('#getQR').val('1');
+    $('#qrbtn').html("send");
+    $('form').submit()
+}
+</script>
+{% endblock %}

@@ -8,8 +8,12 @@ from django.db import transaction
 from .forms import QueryForm, CustomerForm, Product_OrderForm, Service_OrderForm
 from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, PayMethod, Operations
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, DEFAULT_PAGE_COUNT
+from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, DEFAULT_PAGE_COUNT, SendPushMessage
 from calendar import monthrange
+from wxpy import *
+import os
+from random import randint
+import threading
 import logging
 logger = logging.getLogger(__name__)
 
@@ -691,12 +695,20 @@ def sb_billcheck(request, code):
                 if Product_Order.objects.filter(customer=c, product__code=code, validFrom__lte=snextmonth, validTo__gte=enextmonth).exists():
                     porders = porders.exclude(customer=c, product__code = code)
 
+            if not len(porders):
+                return render(request, 'sb/sb_billcheck.html',
+                {
+                    'title': title,
+                    'message': '***当前户中所有客户已缴纳下月{},无需对账.***'.format(product.name)
+                })
+                
             pagecount = DEFAULT_PAGE_COUNT
             pagenum = 1
+            
             if request.POST:
                 pagecount = request.POST.get('page_count', pagecount)
                 pagenum = request.POST.get('page_id', pagenum)
-
+                
                 try:
                     pagecount = int(pagecount)
                 except:
@@ -706,12 +718,6 @@ def sb_billcheck(request, code):
                 except:
                     pagenum = 1
             
-            if not len(porders):
-                return render(request, 'sb/sb_billcheck.html',
-                {
-                    'title': title,
-                    'message': '***当前户中所有客户已缴纳下月{},无需对账.***'.format(product.name)
-                })
             paginator = Paginator(porders, pagecount)
             try:
                 rst = paginator.page(pagenum)
@@ -724,7 +730,8 @@ def sb_billcheck(request, code):
             {
                 'title':title,
                 'porders': rst,
-                'pagecount': pagecount
+                'pagecount': pagecount,
+                'code' : code
             }) 
         else:
             return render(request, 'sb/sb_billcheck.html',
@@ -732,10 +739,60 @@ def sb_billcheck(request, code):
                 'title': title,
                 'message': '***当前户中没有{}客户,无需对账.***'.format(product.name)
             })
-
     except Exception as ex:
         return render(request, 'HYHR/error.html',
         {
             'errormessage': ex,
             'year':datetime.now().year
+        })
+
+wxpybot = None
+
+
+def setqrdownloaded():
+    logger.info('QR downloaded....')
+
+def checkQR(qrpath):
+    wxpybot = Bot(cache_path=True, qr_path=qrpath)
+
+@user_passes_test(lambda u: u.is_superuser, login_url='/login/')
+def sb_pushclient(request, code):
+    if request.POST:
+        global wxpybot
+        if not wxpybot:
+            qrpath = 'sb/QR.png'
+            if os.path.exists(qrpath):
+                try:
+                    os.remove(qrpath)
+                except Exception as ex:
+                    logger.warn('Error while tried to remvoe existing QR.png. ex={}'.format(ex))
+            
+            #thread to check qr.png is downloaded
+            qrThread = threading.Thread(target=checkQR, args=(qrpath,))
+            qrThread.start()
+            import time
+            time.sleep(15)
+            if os.path.exists(qrpath):
+                return render(request, 'sb/pushclient.html',
+                {
+                    'title': '发送微信信息',
+                    'QR': qrpath,
+                })
+            else:
+                return render(request, 'sb/pushclient.html',
+                {
+                    'title': '发送微信信息',
+                    'errormsg': '没有获取到微信登陆二维码',
+                })
+        else:
+            return render(request, 'sb/pushclient.html',
+                {
+                    'title': '发送微信信息',
+                    'customers': ['Qiang'],
+                })
+    else:        
+        return render(request, 'sb/pushclient.html',
+        {
+            'title': '发送微信信息',
+            'getQR': '0'
         })
