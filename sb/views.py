@@ -56,13 +56,13 @@ def export_query_csv_thread(request, rst_list):
         filename = request.user.username + '.csv'
         request.session['result_file'] = filename
     try:
-        with open(os.path.join(settings.STATICFILES_DIRS[0],'HYHR/{}'.format(filename), 'wb')) as f:
+        with open(os.path.join(settings.STATICFILES_DIRS[0],'HYHR/{}'.format(filename)), 'w', encoding='gb2312') as f:
             writer = csv.writer(f) 
-            writer.writerow(('姓名', '身份证号', '手机号', '业务名称', '所在区县', '户口性质', '基数', '总价','开始日期', '截至日期', '下单日期', '状态'))
+            writer.writerow(['姓名', '身份证号', '手机号', '业务名称', '所在区县', '户口性质', '基数', '总价','开始日期', '截至日期', '下单日期', '状态'])
          
             for rst in rst_list:
                 
-                item = (rst.customer.name, rst.customer.pid, rst.customer.phone, rst.product.name, rst.district, rst.customer.get_hukou_display(), rst.product_base, rst.total_price, rst.validFrom, rst.validTo, rst.orderDate, rst.customer.status)
+                item = [rst.customer.name, rst.customer.pid, rst.customer.phone, rst.product.name, rst.district, rst.customer.get_hukou_display(), rst.product_base, rst.total_price, rst.validFrom, rst.validTo, rst.orderDate, rst.customer.status]
                 writer.writerow(item)    
         
     except Exception as ex:
@@ -877,7 +877,7 @@ def export_query_csv(request):
     if request.session.get('result_file'):
         try:
             filename = request.session['result_file']
-            file_route = settings.STATICFILES_DIRS[0],'HYHR/{}'.format(filename)
+            file_route = os.path.join(settings.STATICFILES_DIRS[0],'HYHR/{}'.format(filename))
             wrapper     = FileWrapper(open(file_route, 'rb'))
 
         except IOError as ex:

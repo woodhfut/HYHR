@@ -135,6 +135,7 @@
                  <tr>
                      <td style="width:5%">
                         <select id="pagecount" onchange="pageCountChange()">
+                            <option value="15">15</option>
                             <option value="30">30</option>
                             <option value="50">50</option>
                             <option value="100">100</option>
@@ -158,7 +159,7 @@
                         </span>
                      </td>
                      <td style="width:15%">
-                        <span >共 {{result.paginator.count}} 项</span> <a href="/sb/export/csv">导出到CSV</a>
+                        <span >共 {{result.paginator.count}} 项</span> <a style="background-color: skyblue" href="/sb/export/csv">导出到CSV</a>
                      </td>
                  </tr>
              </tbody>

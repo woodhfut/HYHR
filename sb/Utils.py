@@ -31,7 +31,7 @@ class CustomerOperations(Enum):
 
 
 
-DEFAULT_PAGE_COUNT = 30    
+DEFAULT_PAGE_COUNT = 15    
 
 
 def SendPushMessage(bot, customers, message):
