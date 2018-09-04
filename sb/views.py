@@ -667,7 +667,7 @@ def sb_remove_id(request,code, pid):
             'cpid': customer.pid
         })
         
-def getbillcheckpOrders(code):
+def getbillcheckCustomers(code):
     month = datetime.now().month
     product = Product.objects.get(code=code)
     
@@ -693,7 +693,7 @@ def getbillcheckpOrders(code):
         for c in customers:
             if Product_Order.objects.filter(customer=c, product__code=code, validFrom__lte=snextmonth, validTo__gte=enextmonth).exists():
                 porders = porders.exclude(customer=c, product__code = code)
-        return porders
+        return [po.customer.name for po in porders]
     else:
         return []
 
@@ -814,30 +814,34 @@ def sb_pushclient(request, code):
                     break
 
             if os.path.exists(qrpath):
+                customers = getbillcheckCustomers(code)
                 return render(request, 'sb/pushclient.html',
                 {
                     'title': '发送微信信息',
                     'QR': qrpath,
+                    'customers': customers
                 })
             else:
                 logger.error('still doesnot get QR after 20 sec. ')
+                
                 return render(request, 'sb/pushclient.html',
                 {
                     'title': '发送微信信息',
-                    'errormsg': '没有获取到微信登陆二维码',
+                    'errormsg': '没有获取到微信登陆二维码, 请稍后重试.',
                 })
         else:
             msg = request.POST.get('message', '寰宇向你致以亲切问候.')
-
-            result = SendPushMessage(wxpybot, ['Qiang','abc'], msg)
+            customers = getbillcheckCustomers(code)
+            result = SendPushMessage(wxpybot, customers, msg)
             wxpybot = None
             return render(request, 'sb/pushclient.html',
-                {
-                    'title': '发送微信信息',                   
-                    
-                    'result' : result[1]
-                })
-    else:        
+            {
+                'title': '发送微信信息',                   
+                
+                'result' : result[1]
+            })
+    else:   
+        wxpybot = None     
         return render(request, 'sb/pushclient.html',
         {
             'title': '发送微信信息',

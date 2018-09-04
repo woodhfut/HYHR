@@ -31,17 +31,30 @@
                 <div class="col-sm-10">
                     <button id="qrbtn" type="submit" class="btn btn-primary">发送</button>
                 </div>
+                {% if customers %}
+                    <div class="col-sm-10">
+                            <label class="control-label">客户名单如下：</label>
+                    </div>
                     
+                    <div class="table-responsive">
+                            <table class="table table-hover">
+                                <tbody>
+                                    {% for c in customers %}
+                                    <tr>
+                                        <td>{{c}}</td>
+                                    </tr>
+                                    {%endfor%}
+                                </tbody>
+                            </table>
+                {%endif%}
             </form>
     {% endif %}
 {% endif %}
 
 {% if errormsg %}
+<div class="col-sm-10">
     <label style="color: red"> {{errormsg}}</label>
-{% endif %}
-
-{% if outputmsg %}
-<p>{{outputmsg}}</p>
+</div>
 {% endif %}
 
 {% if result %}
