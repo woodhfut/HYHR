@@ -16,6 +16,8 @@ from django.conf import settings
 from random import randint
 import threading
 import time
+import csv
+from wsgiref.util import FileWrapper
 import logging
 logger = logging.getLogger(__name__)
 
@@ -47,7 +49,25 @@ def sb_subsb(request, id):
                       'year': datetime.now().year
                   })
 
-
+def export_query_csv_thread(request, rst_list):
+    if request.session.get('result_file'):
+        filename = request.session.get('result_file')
+    else:
+        filename = request.user.username + '.csv'
+        request.session['result_file'] = filename
+    try:
+        with open(os.path.join(settings.STATICFILES_DIRS[0],'HYHR/{}'.format(filename), 'wb')) as f:
+            writer = csv.writer(f) 
+            writer.writerow(('姓名', '身份证号', '手机号', '业务名称', '所在区县', '户口性质', '基数', '总价','开始日期', '截至日期', '下单日期', '状态'))
+         
+            for rst in rst_list:
+                
+                item = (rst.customer.name, rst.customer.pid, rst.customer.phone, rst.product.name, rst.district, rst.customer.get_hukou_display(), rst.product_base, rst.total_price, rst.validFrom, rst.validTo, rst.orderDate, rst.customer.status)
+                writer.writerow(item)    
+        
+    except Exception as ex:
+        logger.error('exception in export thread. {}'.format(ex))
+        
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
 def sb_query(request):
     if request.POST:
@@ -166,6 +186,8 @@ def sb_query(request):
 
                     if int(cstatus) == 0:
                         result =[r for r in result if r.product.code & r.customer.status != CustomerStatusCode.Disabled.value]
+
+                    threading.Thread(target=export_query_csv_thread, args=(request, result)).start()
 
                     paginator = Paginator(result, pagecount)
                     try:
@@ -848,3 +870,21 @@ def sb_pushclient(request, code):
             'getQRCode': '1',
             
         })
+
+
+     
+def export_query_csv(request):
+    if request.session.get('result_file'):
+        try:
+            filename = request.session['result_file']
+            file_route = settings.STATICFILES_DIRS[0],'HYHR/{}'.format(filename)
+            wrapper     = FileWrapper(open(file_route, 'rb'))
+
+        except IOError as ex:
+            return HttpResponse(ex)
+        response    = HttpResponse(wrapper,content_type='application/octet-stream')
+        response['Content-Disposition'] = 'attachment; filename=%s' % os.path.basename(file_route)
+        response['Content-Length']      = os.path.getsize(file_route)
+        return response
+    else:
+        return HttpResponse('Search result lost.')

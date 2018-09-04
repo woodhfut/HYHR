@@ -140,7 +140,7 @@
                             <option value="100">100</option>
                         </select>
                      </td>
-                     <td style="width:85%; text-align:center">
+                     <td style="width:80%; text-align:center">
                         <span >
                             {% if result.has_previous%}
                             <a href="#" onclick="navigatetopagewithQuery(1)"><span class="glyphicon glyphicon-fast-backward"></span></a>
@@ -157,8 +157,8 @@
                             
                         </span>
                      </td>
-                     <td style="width:10%">
-                        <span >共 {{result.paginator.count}} 项</span>
+                     <td style="width:15%">
+                        <span >共 {{result.paginator.count}} 项</span> <a href="/sb/export/csv">导出到CSV</a>
                      </td>
                  </tr>
              </tbody>
