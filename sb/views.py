@@ -12,6 +12,7 @@ from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, DEFAULT_
 from calendar import monthrange
 from wxpy import *
 import os
+from django.conf import settings
 from random import randint
 import threading
 import time
@@ -666,7 +667,37 @@ def sb_remove_id(request,code, pid):
             'cpid': customer.pid
         })
         
+def getbillcheckpOrders(code):
+    month = datetime.now().month
+    product = Product.objects.get(code=code)
+    
+    cscode = CustomerStatusCode.Disabled
+    if product.code == ProductCode.SB.value:
+        cscode = CustomerStatusCode.SB
+    elif product.code == ProductCode.GJJ.value:
+        cscode = CustomerStatusCode.GJJ
+    elif product.code == ProductCode.OTHER.value:
+        cscode = CustomerStatusCode.OTHER
 
+    customers =[c for c in Customer.objects.filter(status__gt = CustomerStatusCode.Disabled.value) if c.status & cscode.value == cscode.value]
+
+    if len(customers):
+        today = date.today()
+        startdate = date(today.year, today.month, 1)
+        enddate = date(today.year, today.month, monthrange(today.year, today.month)[1])
+        logger.info('startdate:{}, enddate:{}'.format(startdate.strftime('%Y-%m-%d'), enddate.strftime('%Y-%m-%d')))
+        porders = Product_Order.objects.filter(product__code =code,  validFrom__lte=startdate, validTo__gte=enddate,customer__in=customers)
+
+        snextmonth = date(today.year, today.month+1, 1)
+        enextmonth = date(today.year, today.month+1, monthrange(today.year, today.month+1)[1])
+        for c in customers:
+            if Product_Order.objects.filter(customer=c, product__code=code, validFrom__lte=snextmonth, validTo__gte=enextmonth).exists():
+                porders = porders.exclude(customer=c, product__code = code)
+        return porders
+    else:
+        return []
+
+        
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
 def sb_billcheck(request, code):
     try:
@@ -751,8 +782,9 @@ wxpybot = None
 
 
 def checkQR(qrpath):
+    global wxpybot
     try:
-        wxpybot = Bot(cache_path=True, qr_path=qrpath)
+        wxpybot = Bot(qr_path=qrpath)
     except Exception as ex:
         logger.warn('Error while generate QR for bot. {}'.format(ex))
         
@@ -761,8 +793,8 @@ def checkQR(qrpath):
 def sb_pushclient(request, code):
     if request.POST:
         global wxpybot
-        if not wxpybot:
-            qrpath = './static/HYHR/img/QR.png'
+        if not wxpybot and 'getQR' in request.POST:
+            qrpath = os.path.join(settings.STATICFILES_DIRS[0], 'HYHR/img/QR.png')
             if os.path.exists(qrpath):
                 try:
                     os.remove(qrpath)
@@ -778,14 +810,14 @@ def sb_pushclient(request, code):
                 if not os.path.exists(qrpath):
                     time.sleep(1)
                     retry-= 1
+                else:
+                    break
 
             if os.path.exists(qrpath):
                 return render(request, 'sb/pushclient.html',
                 {
                     'title': '发送微信信息',
                     'QR': qrpath,
-                    'getQR' : '1',
-                    
                 })
             else:
                 logger.error('still doesnot get QR after 20 sec. ')
@@ -795,17 +827,20 @@ def sb_pushclient(request, code):
                     'errormsg': '没有获取到微信登陆二维码',
                 })
         else:
+            msg = request.POST.get('message', '寰宇向你致以亲切问候.')
+
+            result = SendPushMessage(wxpybot, ['Qiang','abc'], msg)
+            wxpybot = None
             return render(request, 'sb/pushclient.html',
                 {
-                    'title': '发送微信信息',
-                    'getQR' : '1',
+                    'title': '发送微信信息',                   
                     
-                    'customers': ['Qiang','abc'],
+                    'result' : result[1]
                 })
     else:        
         return render(request, 'sb/pushclient.html',
         {
             'title': '发送微信信息',
-            'getQR': '0',
+            'getQRCode': '1',
             
         })

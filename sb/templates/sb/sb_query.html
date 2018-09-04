@@ -165,11 +165,11 @@
          </table>                  
         </div>
         {%else%}
-        {% if form.errors %}
-            <p class="validation-summary-errors">Errors met during the Query, make sure you enter all the field correctly and try again.</p>
-        {%else%}
-            <p>No result found.</p>
-        {% endif %}
+            {% if form.errors %}
+                <p class="validation-summary-errors">Errors met during the Query, make sure you enter all the field correctly and try again.</p>
+            {%else%}
+                <p>No result found.</p>
+            {% endif %}
         
         {%endif%}
         
