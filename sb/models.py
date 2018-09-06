@@ -13,6 +13,9 @@ class User_extra_info(models.Model):
     def __str__(self):
         return 'name: ' + self.username + '(' + self.realname + ' pid: ' + self.pid + ' phoneNo: ' + self.phone + ')'
 
+    class Meta:
+        verbose_name = '补充用户信息'
+
 class Partner(models.Model):
     name = models.CharField(max_length = 30)
     phone = models.CharField(max_length = 120, null=True, blank =True)
@@ -21,6 +24,9 @@ class Partner(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        verbose_name = '合作伙伴'
 
 # class CustomerStatus(models.Model):
 #     name = models.CharField(max_length = 20)
@@ -46,6 +52,9 @@ class Customer(models.Model):
     
     def __str__(self):
         return self.name + '(' + self.pid + ')'
+    
+    class Meta:
+        verbose_name ='客户'
 
 class Product(models.Model):
     name = models.CharField(max_length = 30)
@@ -57,12 +66,19 @@ class Product(models.Model):
     note = models.CharField(max_length = 50, null= True, blank=True)
     def __str__(self):
         return self.name
+    
+    class Meta:
+        verbose_name = '产品'
+
 
 class PayMethod(models.Model):
     name = models.CharField(max_length = 20)
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        verbose_name = '支付方法'
 
 class Service_Order(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
@@ -83,15 +99,24 @@ class Service_Order(models.Model):
     def __str__(self):
         return self.customer.name + '(' + self.product.name + ':' + self.svalidFrom.strftime('%Y-%m-%d') + '--' + self.svalidTo.strftime('%Y-%m-%d') + ')'
 
+    class Meta:
+        verbose_name = '服务费订单'
+
 class OrderType(models.Model):
     name = models.CharField(max_length=20)
     def __str__(self):
         return self.name
 
+    class Meta:
+        verbose_name = '订单类型'
+
 class District(models.Model):
     name = models.CharField(max_length = 50)
     def __str__(self):
         return self.name    
+
+    class Meta:
+        verbose_name = '所属区县'
 
 class Product_Order(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
@@ -132,6 +157,9 @@ class Product_Order(models.Model):
     def __str__(self):
         return self.customer.name + '(' + self.product.name + ':' + self.validFrom.strftime('%Y-%m-%d') + '--' + self.validTo.strftime('%Y-%m-%d') + ')'
 
+    class Meta:
+        verbose_name = '产品订单'
+
 class Operations(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete = models.CASCADE)
@@ -141,3 +169,5 @@ class Operations(models.Model):
     def __str__(self):
         return self.customer.name + '(' + self.product.name + ':' + str(self.operation) + ':' +  self.oper_date.strftime('%Y-%m-%d %H:%M:%S') + ')'
 
+    class Meta:
+        verbose_name = '操作'
