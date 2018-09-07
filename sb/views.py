@@ -6,7 +6,7 @@ from django.contrib.auth.views import login_required
 from django.contrib.auth.decorators import user_passes_test, permission_required
 from django.db import transaction
 from .forms import QueryForm, CustomerForm, Product_OrderForm, Service_OrderForm
-from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, PayMethod, Operations
+from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, PayMethod, Operations, User_extra_info
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, DEFAULT_PAGE_COUNT, SendPushMessage
 from calendar import monthrange
@@ -68,35 +68,77 @@ def export_query_csv_thread(request, rst_list):
     except Exception as ex:
         logger.error('exception in export thread. {}'.format(ex))
         
-@user_passes_test(lambda u: u.is_superuser, login_url='/login/')
-def sb_query(request):
-    if request.POST:
-        form = QueryForm(request.POST)
+@user_passes_test(lambda u: u.is_authenticated, login_url='/login/')
+def sb_query(request):      
+    form = QueryForm()
+    title = '查询'
+    if 'name' in request.GET or \
+        'pid' in request.GET or \
+        'dateFrom' in request.GET or \
+        'dateTo' in request.GET or \
+        'productName' in request.GET or \
+        'customerStatus' in request.GET:
+        name = request.GET.get('name',None)
+        pid = request.GET.get('pid',None)
+        dateFrom = request.GET.get('dateFrom',None)
+        dateTo = request.GET.get('dateTo',None)
+        prodName = request.GET.get('productName', 0)
+        cstatus = request.GET.get('customerStatus', 0)
+        pageid = request.GET.get('page_id',1)
+        pagecount = request.GET.get('page_count',DEFAULT_PAGE_COUNT)
+        collapse = request.GET.get('collapse',1)
+        try:
+            pagecount = int(pagecount)
+        except:
+            pagecount = DEFAULT_PAGE_COUNT
+        
+        try:
+            pageid = int(pageid)
+        except:
+            pageid = 1
+
+        try:
+            collapse = int(collapse)
+        except:
+            collapse = 1
+        
+        if not request.user.is_superuser:
+            uei = User_extra_info.objects.get(username=request.user.username)
+            name = uei.realname
+            pid = uei.pid
+
+        form = QueryForm({'name':name,
+                        'pid':pid,
+                        'dateFrom':dateFrom,
+                        'dateTo':dateTo,
+                        'productName': int(prodName), 
+                        'customerStatus': int(cstatus)
+                        })
         if form.is_valid():
-            cd = form.cleaned_data
-            name = cd['name']
-            pid = cd['pid']
-            dateFrom = cd['dateFrom']
-            dateTo = cd['dateTo']
-            pagecount = request.POST['page_count']
-            pageid = request.POST['page_id']
-            if not pagecount:
-                pagecount = 15
-            if not pageid:
-                pageid = 1
-
             try:
-                result = Product_Order.objects.all()
-                if name !='':
+                if int(cstatus) == 0:
+                    result = Product_Order.objects.filter(customer__status__gt = 0).order_by('customer__name','-id')
+                else:
+                    result = Product_Order.objects.order_by('customer__name','-id')
+                
+                if name and len(name.strip()) > 0:
                     result = result.filter(customer__name__icontains=name)
-                if pid !='':
-                    result = result.filter(customer__pid__iexact=pid)
-                if dateFrom:
-                    result = result.filter(validTo__gte=dateFrom)
-                if dateTo:
-                    result = result.filter(validFrom__lte=dateTo)
+                if pid and len(pid.strip())> 0:
+                    result = result.filter(customer__pid=pid)
+                if dateFrom:                 
+                    result = result.filter(validTo__gte=form.cleaned_data['dateFrom'])
+                if dateTo:             
+                    result = result.filter(validFrom__lte=form.cleaned_data['dateTo'])
+                
+                
+                if int(prodName) != 0:
+                    result = result.filter(product__code = int(prodName))
 
-                result = result.order_by('name')
+                if int(cstatus) == 0:
+                    result =[r for r in result if r.product.code & r.customer.status != CustomerStatusCode.Disabled.value]
+
+                threading.Thread(target=export_query_csv_thread, args=(request, result)).start()
+
                 paginator = Paginator(result, pagecount)
                 try:
                     rst = paginator.page(pageid)
@@ -104,130 +146,38 @@ def sb_query(request):
                     rst = paginator.page(1)
                 except EmptyPage:
                     rst = paginator.page(paginator.num_pages)
-            except:
+            except Exception as ex:
+                logger.warn('Query get exception {}'.format(ex))
                 result = Product_Order.objects.none()
-            return render(request,'app/sb_query.html',
-                  {
-                      'title': 'Query',
-                      'pagecount': pagecount,
-                      'form':form,
-                      'result': rst,
-                      'year': datetime.now().year
-                  })
-
-        else:
-            return render(request,'app/sb_query.html',
-                  {
-                      'title': 'Query',
-                      'pagecount': 15,
-                      'form':form,
-                      'year': datetime.now().year
-                  })
-    else:        
-        form = QueryForm()
-        title = '查询'
-        if 'name' in request.GET or \
-            'pid' in request.GET or \
-            'dateFrom' in request.GET or \
-            'dateTo' in request.GET or \
-            'productName' in request.GET or \
-            'customerStatus' in request.GET:
-            name = request.GET.get('name',None)
-            pid = request.GET.get('pid',None)
-            dateFrom = request.GET.get('dateFrom',None)
-            dateTo = request.GET.get('dateTo',None)
-            prodName = request.GET.get('productName', 0)
-            cstatus = request.GET.get('customerStatus', 0)
-            pageid = request.GET.get('page_id',1)
-            pagecount = request.GET.get('page_count',DEFAULT_PAGE_COUNT)
-            collapse = request.GET.get('collapse',1)
-            try:
-                pagecount = int(pagecount)
-            except:
-                pagecount = DEFAULT_PAGE_COUNT
+                rst = Product_Order.objects.none()
             
-            try:
-                pageid = int(pageid)
-            except:
-                pageid = 1
-
-            try:
-                collapse = int(collapse)
-            except:
-                collapse = 1
-            
-           
-            form = QueryForm({'name':name,
-                          'pid':pid,
-                          'dateFrom':dateFrom,
-                          'dateTo':dateTo,
-                          'productName': int(prodName), 
-                          'customerStatus': int(cstatus)
-                          })
-            if form.is_valid():
-                try:
-                    if int(cstatus) == 0:
-                        result = Product_Order.objects.filter(customer__status__gt = 0).order_by('customer__name','-id')
-                    else:
-                        result = Product_Order.objects.order_by('customer__name','-id')
-                    
-                    if name and len(name.strip()) > 0:
-                        result = result.filter(customer__name__icontains=name)
-                    if pid and len(pid.strip())> 0:
-                        result = result.filter(customer__pid=pid)
-                    if dateFrom:                 
-                        result = result.filter(validTo__gte=form.cleaned_data['dateFrom'])
-                    if dateTo:             
-                        result = result.filter(validFrom__lte=form.cleaned_data['dateTo'])
-                    
-                    
-                    if int(prodName) != 0:
-                        result = result.filter(product__code = int(prodName))
-
-                    if int(cstatus) == 0:
-                        result =[r for r in result if r.product.code & r.customer.status != CustomerStatusCode.Disabled.value]
-
-                    threading.Thread(target=export_query_csv_thread, args=(request, result)).start()
-
-                    paginator = Paginator(result, pagecount)
-                    try:
-                        rst = paginator.page(pageid)
-                    except PageNotAnInteger:
-                        rst = paginator.page(1)
-                    except EmptyPage:
-                        rst = paginator.page(paginator.num_pages)
-                except Exception as ex:
-                    logger.warn('Query get exception {}'.format(ex))
-                    result = Product_Order.objects.none()
-                    rst = Product_Order.objects.none()
-                
-                return render(request,'sb/sb_query.html',
-                          {
-                              'title': title,
-                              'pagecount': pagecount,
-                              'collapse': collapse,
-                              'result': rst,
-                              'form':form,
-                              'year': datetime.now().year
-                          })
-            else:
-                return render(request,'sb/sb_query.html',
-                      {
-                          'title': title,
-                          'pagecount': pagecount,
-                          'collapse': collapse,
-                          'form':form,
-                          'year': datetime.now().year
-                      })
+            return render(request,'sb/sb_query.html',
+                        {
+                            'title': title,
+                            'pagecount': pagecount,
+                            'collapse': collapse,
+                            'result': rst,
+                            'form':form,
+                            'year': datetime.now().year
+                        })
         else:
             return render(request,'sb/sb_query.html',
-                      {
-                          'title': title,
-                          'pagecount': 15,
-                          'collapse':1,
-                          'form':form,
-                          'year': datetime.now().year
-                      })
+                    {
+                        'title': title,
+                        'pagecount': pagecount,
+                        'collapse': collapse,
+                        'form':form,
+                        'year': datetime.now().year
+                    })
+    else:
+        return render(request,'sb/sb_query.html',
+                    {
+                        'title': title,
+                        'pagecount': 15,
+                        'collapse':1,
+                        'form':form,
+                        'year': datetime.now().year
+                    })
 
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
 def sb_add(request, code):

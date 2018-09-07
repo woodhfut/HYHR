@@ -22,7 +22,11 @@ from datetime import datetime
 from . import views
 from . import forms
 
+def i18n_javascript(request):
+    return admin.site.i18n_javascript(request)
+
 urlpatterns = [
+    url(r'^admin/jsi18n', i18n_javascript),
     url(r'^admin/', admin.site.urls),
     url(r'^$', views.home, name='home' ),
     url(r'^contact$', views.contact, name='contact'),

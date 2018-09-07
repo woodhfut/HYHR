@@ -66,12 +66,13 @@
                                 {{form.productName}} 
                                 {%for field in form%}{% if field.name == 'productName' %}<label class="validation-summary-errors">{%for error in field.errors%}{{error}}{%endfor%}</label>{%endif%}{%endfor%}
                             </div>
-
+                            {% if request.user.is_superuser%}
                             <label class="col-sm-2 control-label" for="customerStatus">客户状态: </label>
                             <div class="col-sm-2">
                                 {{form.customerStatus}}
                                 {%for field in form%}{% if field.name == 'customerStatus' %}<label class="validation-summary-errors">{%for error in field.errors%}{{error}}{%endfor%}</label>{%endif%}{%endfor%}
                             </div>
+                            {%endif%}
                        </div>
                     </div>
                 </div>
@@ -107,7 +108,9 @@
                     <th>截至日期</th>
                     <th>订单日期</th>   
                     <th>状态</th>
+                    {% if request.user.is_superuser%}
                     <th>续费</th>
+                    {%endif%}
                 </tr>
             </thead>
             <tbody>
@@ -125,7 +128,9 @@
                         <td>{{rst.validTo.year}}-{{rst.validTo.month|stringformat:"02d"}}-{{rst.validTo.day|stringformat:"02d"}}</td>
                         <td>{{rst.orderDate}}</td>   
                         <td>{{rst.customer.status}}</td>
+                        {% if request.user.is_superuser%}
                         <td><a href="/sb/reorder/{{rst.product.code}}/{{rst.customer.pid}}/">{{rst.product.name}}续费</a><span>/</span><a href="/sb/remove/{{rst.product.code}}/{{rst.customer.pid}}">减员</a></td>
+                        {%endif%}
                     </tr>
                 {% endfor %}
             </tbody>

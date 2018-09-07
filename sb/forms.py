@@ -44,7 +44,7 @@ class CustomerForm(ModelForm):
         phone = self.cleaned_data.get('phone', None)
         if phone:
             phone = phone.strip()
-            if len(phone) != 11:
+            if len(phone) != 11 or not phone.isnumeric():
                 raise forms.ValidationError(_('手机号码必须为11位.'), code=_('invalid_length'))
         return phone
 
