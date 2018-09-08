@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import ugettext_lazy as _
-from django.forms import ModelForm
+from django.forms import ModelForm, Textarea
 from .models import Customer, Product_Order, Service_Order, Product
 from django import forms
 from datetime import datetime, date
@@ -27,6 +27,10 @@ class CustomerForm(ModelForm):
         help_texts = {
                 #'name': _('客户姓名'),
             }
+
+        widgets={
+            'note': Textarea(attrs={'cols': 100, 'rows': 5})
+        }
     def clean_pid(self):
         id = self.cleaned_data.get('pid',None)
         if id:
@@ -89,6 +93,7 @@ class Product_OrderForm(ModelForm):
                 'validFrom':AdminDateWidget({'placeholder':'开始日期.'}),
                 'validTo': AdminDateWidget({'placeholder':'结束日期.'}),
                 'orderDate': AdminDateWidget({'placeholder': 'Order date.'}),
+                'note': Textarea(attrs={'cols': 100, 'rows': 5})
             }
 
 class Service_OrderForm(ModelForm):
@@ -125,6 +130,7 @@ class Service_OrderForm(ModelForm):
                 'svalidFrom':AdminDateWidget({'placeholder':'开始日期.'}),
                 'svalidTo': AdminDateWidget({'placeholder':'结束日期.'}),
                 'orderDate': AdminDateWidget({'placeholder': '缴纳日期.'}),
+                'snote': Textarea(attrs={'cols': 100, 'rows': 5})
             } 
         
 class QueryForm(forms.Form):
