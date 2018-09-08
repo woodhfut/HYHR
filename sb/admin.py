@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import Customer, Product, Product_Order, Service_Order, Partner, User_extra_info,District, OrderType, PayMethod, Operations
+from .models import Customer, Product, Product_Order, Service_Order, Partner, User_extra_info,District, OrderType, PayMethod, Operations, TodoList
 
 admin.site.register(Customer)
 admin.site.register(Product)
@@ -13,3 +13,4 @@ admin.site.register(OrderType)
 admin.site.register(PayMethod)
 admin.site.register(Operations)
 admin.site.register(User_extra_info)
+admin.site.register(TodoList)

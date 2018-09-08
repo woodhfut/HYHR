@@ -6,7 +6,7 @@ from django.contrib.auth.views import login_required
 from django.contrib.auth.decorators import user_passes_test, permission_required
 from django.db import transaction
 from .forms import QueryForm, CustomerForm, Product_OrderForm, Service_OrderForm
-from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, PayMethod, Operations, User_extra_info
+from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, PayMethod, Operations, User_extra_info, TodoList
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, DEFAULT_PAGE_COUNT, SendPushMessage
 from calendar import monthrange
@@ -301,6 +301,20 @@ def sb_add(request, code):
                     op.save()
                     customer.save()
 
+                    logger.info('add info to Todolist.')
+                    if p_cd['note']:
+                        ptodo, created = TodoList.objects.get_or_create(
+                            info = p_cd['note'],
+                            isfinished = False
+                        )
+                        ptodo.save()
+                    if s_cd['snote']:
+                        stodo,created = TodoList.objects.get_or_create(
+                            info = s_cd['snote'],
+                            isfinished = False
+                        )
+                        stodo.save()
+
             except Exception as ex:
                 return render(request, 'HYHR/error.html',
                 {
@@ -364,7 +378,7 @@ def sb_reorder(request,code,pid):
                 dstName = p_cd['district']
                 district = District.objects.get(name= dstName)
 
-                p_order, created  = Product_Order.objects.get_or_create(
+                p_order, pcreated  = Product_Order.objects.get_or_create(
                         customer=customer, 
                         product=product,
                         validFrom = p_cd['validFrom'],
@@ -382,6 +396,13 @@ def sb_reorder(request,code,pid):
                 op = Operations(customer = customer,
                                             product = product,
                                             operation = CustomerOperations.REORDER.value)
+                logger.info('add info to Todolist in reorder.')
+                if p_cd['note']:
+                    ptodo, created = TodoList.objects.get_or_create(
+                        info = p_cd['note'],
+                        isfinished = False
+                    )
+                    
                 if not checkServiceFee:
                     #check whether service order exists.
                     s_order_form = Service_OrderForm(request.POST)
@@ -409,11 +430,20 @@ def sb_reorder(request,code,pid):
                             )
                             #s_order.save()
                             customer.status = customer.status | product.code
+
+                            if s_cd['snote']:
+                                stodo,created = TodoList.objects.get_or_create(
+                                info = s_cd['snote'],
+                                isfinished = False
+                                )
+                    
                             with transaction.atomic():
                                 p_order.save()
                                 s_order.save()
                                 op.save()
                                 customer.save()
+                                ptodo.save()
+                                stodo.save()
                         else:                            
                             return render(request, 'sb/sb_reorder.html',
                             {
@@ -444,6 +474,7 @@ def sb_reorder(request,code,pid):
                         p_order.save()
                         op.save()
                         customer.save()
+                        ptodo.save()
 
             except Exception as ex:
                 return render(request, 'HYHR/error.html',
@@ -763,65 +794,70 @@ def checkQR(qrpath):
 
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
 def sb_pushclient(request, code):
-    if request.POST:
-        global wxpybot
-        if not wxpybot and 'getQR' in request.POST:
-            qrpath = os.path.join(settings.STATICFILES_DIRS[0], 'HYHR/img/QR.png')
-            if os.path.exists(qrpath):
-                try:
-                    os.remove(qrpath)
-                except Exception as ex:
-                    logger.warn('Error while tried to remvoe existing QR.png. ex={}'.format(ex))
-            
-            #thread to check qr.png is downloaded
-            qrThread = threading.Thread(target=checkQR, args=(qrpath,))
-            qrThread.start()
-            
-            retry = 20
-            while retry > 0:
-                if not os.path.exists(qrpath):
-                    time.sleep(1)
-                    retry-= 1
-                else:
-                    break
-
-            if os.path.exists(qrpath):
-                customers = getbillcheckCustomers(code)
-                return render(request, 'sb/pushclient.html',
-                {
-                    'title': '发送微信信息',
-                    'QR': qrpath,
-                    'customers': customers
-                })
-            else:
-                logger.error('still doesnot get QR after 20 sec. ')
+    try:
+        if request.POST:
+            global wxpybot
+            if not wxpybot and 'getQR' in request.POST:
+                qrpath = os.path.join(settings.STATICFILES_DIRS[0], 'HYHR/img/QR.png')
+                if os.path.exists(qrpath):
+                    try:
+                        os.remove(qrpath)
+                    except Exception as ex:
+                        logger.warn('Error while tried to remvoe existing QR.png. ex={}'.format(ex))
                 
+                #thread to check qr.png is downloaded
+                qrThread = threading.Thread(target=checkQR, args=(qrpath,))
+                qrThread.start()
+                
+                retry = 20
+                while retry > 0:
+                    if not os.path.exists(qrpath):
+                        time.sleep(1)
+                        retry-= 1
+                    else:
+                        break
+
+                if os.path.exists(qrpath):
+                    customers = getbillcheckCustomers(code)
+                    return render(request, 'sb/pushclient.html',
+                    {
+                        'title': '发送微信信息',
+                        'QR': qrpath,
+                        'customers': customers
+                    })
+                else:
+                    logger.error('still doesnot get QR after 20 sec. ')
+                    
+                    return render(request, 'sb/pushclient.html',
+                    {
+                        'title': '发送微信信息',
+                        'errormsg': '没有获取到微信登陆二维码, 请稍后重试.',
+                    })
+            else:
+                msg = request.POST.get('message', '寰宇向你致以亲切问候.')
+                customers = getbillcheckCustomers(code)
+                result = SendPushMessage(wxpybot, customers, msg)
+                wxpybot = None
                 return render(request, 'sb/pushclient.html',
                 {
-                    'title': '发送微信信息',
-                    'errormsg': '没有获取到微信登陆二维码, 请稍后重试.',
+                    'title': '发送微信信息',                   
+                    
+                    'result' : result[1]
                 })
-        else:
-            msg = request.POST.get('message', '寰宇向你致以亲切问候.')
-            customers = getbillcheckCustomers(code)
-            result = SendPushMessage(wxpybot, customers, msg)
-            wxpybot = None
+        else:   
+            wxpybot = None     
             return render(request, 'sb/pushclient.html',
             {
-                'title': '发送微信信息',                   
+                'title': '发送微信信息',
+                'getQRCode': '1',
                 
-                'result' : result[1]
             })
-    else:   
-        wxpybot = None     
-        return render(request, 'sb/pushclient.html',
+    except Exception as ex:
+        return render(request, 'HYHR/error.html',
         {
-            'title': '发送微信信息',
-            'getQRCode': '1',
-            
+            'errormessage': ex,
+            'year':datetime.now().year
         })
-
-
      
 def export_query_csv(request):
     if request.session.get('result_file'):
@@ -838,3 +874,64 @@ def export_query_csv(request):
         return response
     else:
         return HttpResponse('Search result lost.')
+
+
+@user_passes_test(lambda u: u.is_superuser, login_url='/login/')
+def sb_todolist(request):
+    try:
+        if request.POST:
+            checkall = request.POST.get('checkall', False)
+            todos = None
+            if checkall:
+                todos = TodoList.objects.filter(isfinished=False)
+
+            else:
+                todoids = request.POST.getlist('subcheckboxes')
+                intids =[int(sid) for sid in todoids]
+                todos = TodoList.objects.filter(id__in=intids)
+
+            if todos and todos.exists():
+                for todo in todos:
+                    todo.isfinished = True
+                    todo.save()
+
+            return HttpResponseRedirect('.')
+            
+        else:
+            todos = TodoList.objects.filter(isfinished=False)
+            
+            if todos.exists():
+                return render(request, 'sb/todolist.html',
+                {
+                    'todos': todos,
+                })
+            else:
+                return render(request, 'sb/todolist.html',
+                {
+                    'alldone': '***目前没有待办事宜!'
+                })
+    except Exception as ex:
+        return render(request, 'HYHR/error.html',
+        {
+            'errormessage': ex,
+            'year':datetime.now().year
+        })
+
+
+
+@user_passes_test(lambda u: u.is_superuser, login_url='/login/')
+def sb_todolist_add(request):
+    try:
+        if request.POST:
+            pass
+        else:
+            return render(request, 'sb/todolist_add.html',
+            {
+                
+            })
+    except Exception as ex:
+        return render(request, 'HYHR/error.html',
+        {
+            'errormessage': ex,
+            'year':datetime.now().year
+        })

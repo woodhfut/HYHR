@@ -14,4 +14,6 @@ urlpatterns = [
     url(r'^billcheck/(?P<code>[1-2])/$', views.sb_billcheck, name='sb_billcheck'),
     url(r'^pushclient/(?P<code>[1-2])/$', views.sb_pushclient, name='sb_pushclient'),
     url(r'^export/csv/$', views.export_query_csv, name='export_query_csv'),
+    url(r'^todolist/$', views.sb_todolist, name='sb_todolist'),
+    url(r'^todolist/add/$', views.sb_todolist_add, name='sb_todolist_add'),
 ]

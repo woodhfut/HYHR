@@ -8,7 +8,7 @@ class User_extra_info(models.Model):
     pid = models.CharField(max_length=18, unique=True, null=False)
     realname = models.CharField(max_length=50, null=False)
     phone = models.CharField(max_length=11, null=False)
-    comment = models.CharField(max_length=200, null=True)
+    comment = models.TextField(max_length=200, null=True)
 
     def __str__(self):
         return 'name: ' + self.username + '(' + self.realname + ' pid: ' + self.pid + ' phoneNo: ' + self.phone + ')'
@@ -20,7 +20,7 @@ class Partner(models.Model):
     name = models.CharField(max_length = 30)
     phone = models.CharField(max_length = 120, null=True, blank =True)
     im = models.CharField(max_length = 120, null=True, blank =True)
-    note =  models.CharField(max_length = 120, null=True, blank =True)
+    note =  models.TextField(max_length = 120, null=True, blank =True)
 
     def __str__(self):
         return self.name
@@ -48,7 +48,7 @@ class Customer(models.Model):
     status = models.PositiveSmallIntegerField(default=0)
     wechat = models.CharField(max_length = 50, null= True, blank=True)   
     introducer = models.CharField(max_length = 30, null=True, blank=True)
-    note = models.CharField(max_length = 50, null= True, blank=True)
+    note = models.TextField(max_length = 50, null= True, blank=True)
     
     def __str__(self):
         return self.name + '(' + self.pid + ')'
@@ -63,7 +63,7 @@ class Product(models.Model):
     customers = models.ManyToManyField(Customer, through='Product_Order')
     validFrom = models.DateField()
     validTo = models.DateField()
-    note = models.CharField(max_length = 50, null= True, blank=True)
+    note = models.TextField(max_length = 50, null= True, blank=True)
     def __str__(self):
         return self.name
     
@@ -94,7 +94,7 @@ class Service_Order(models.Model):
     partner = models.ForeignKey(Partner, on_delete=models.CASCADE,null=True, blank=True)
     sprice2Partner = models.FloatField(null=True, blank=True, default=0)
     #dealPlatform = models.CharField(max_length = 10, null=True, blank=True)
-    snote = models.CharField(max_length = 100, null=True, blank=True)
+    snote = models.TextField(max_length = 100, null=True, blank=True)
 
     def __str__(self):
         return self.customer.name + '(' + self.product.name + ':' + self.svalidFrom.strftime('%Y-%m-%d') + '--' + self.svalidTo.strftime('%Y-%m-%d') + ')'
@@ -152,7 +152,7 @@ class Product_Order(models.Model):
     #partner = models.ForeignKey(Partner, on_delete=models.CASCADE, null = True, blank=True)
     #price2Partner = models.FloatField(null=True,blank=True, default=0)
     #dealPlatform = models.CharField(max_length = 10, null=True, blank=True)
-    note = models.CharField(max_length = 100, null=True, blank=True)
+    note = models.TextField(max_length = 100, null=True, blank=True)
 
     def __str__(self):
         return self.customer.name + '(' + self.product.name + ':' + self.validFrom.strftime('%Y-%m-%d') + '--' + self.validTo.strftime('%Y-%m-%d') + ')'
@@ -171,3 +171,14 @@ class Operations(models.Model):
 
     class Meta:
         verbose_name = '操作'
+
+
+class TodoList(models.Model):
+    info = models.TextField(verbose_name='待办事宜', max_length=500)
+    isfinished = models.BooleanField(verbose_name='是否已完成', default=False)
+
+    def __str__(self):
+        return self.info
+    
+    class Meta:
+        verbose_name ='待办事宜'
