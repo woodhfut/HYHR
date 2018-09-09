@@ -1,0 +1,23 @@
+{% extends 'HYHR/layout.html' %}
+
+{% block content %}
+<h2>{{title}}</h2>
+
+<form class="form-horizontal" role="form" method="POST">
+        {% csrf_token %}
+        <div class="col-sm-10">
+            <label class="control-label">待办事宜：</label>
+        </div>
+        <div class="col-sm-10">
+            <textarea class="col-sm-10" name=info id=info rows="5" placeholder="此处填写待办事宜."></textarea>
+            {% if errormsg %}
+                <label class="control-label" style="color:red">{{errormsg}}</label>
+            {% endif %}
+        </div>
+    
+        <div class="col-sm-10">
+            <button id="qrbtn" type="submit" class="btn btn-primary">确定</button>
+        </div>
+</form>
+
+{% endblock %}

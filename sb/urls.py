@@ -16,4 +16,5 @@ urlpatterns = [
     url(r'^export/csv/$', views.export_query_csv, name='export_query_csv'),
     url(r'^todolist/$', views.sb_todolist, name='sb_todolist'),
     url(r'^todolist/add/$', views.sb_todolist_add, name='sb_todolist_add'),
+    url(r'^todolist/modify/(?P<id>\d+)/$', views.sb_todolist_modify, name='sb_todolist_modify'),
 ]

@@ -922,12 +922,44 @@ def sb_todolist(request):
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
 def sb_todolist_add(request):
     try:
+        title = '新增待办事宜'
         if request.POST:
-            pass
+            info = request.POST.get('info', None)
+            if info:
+                info = info.strip()
+                if len(info) == 0:
+                    return render(request, 'sb/todolist_add_modify.html',
+                    {
+                        'title': title,
+                        'errormsg':'是不是傻，待办事宜别空着啊！',        
+                    }) 
+                else:
+                    todo, created = TodoList.objects.get_or_create(
+                        info = info,
+                        isfinished = False
+                    )
+                    if not created:
+                        return render(request, 'sb/todolist_add_modify.html',
+                        {
+                            'title': title,
+                            'errormsg':'是不是傻，存在相同的待办事宜还没有完成，先把那个完成了再说吧！',        
+                        })
+                    else:
+                        todo.save()
+                        return render(request, 'sb/todolist_add_success.html',
+                        {
+
+                        })
+            else:
+                return render(request, 'sb/todolist_add_modify.html',
+                {
+                    'title': title,
+                    'errormsg':'是不是傻，待办事宜别空着啊！',        
+                }) 
         else:
-            return render(request, 'sb/todolist_add.html',
+            return render(request, 'sb/todolist_add_modify.html',
             {
-                
+                'title': title,
             })
     except Exception as ex:
         return render(request, 'HYHR/error.html',
@@ -935,3 +967,41 @@ def sb_todolist_add(request):
             'errormessage': ex,
             'year':datetime.now().year
         })
+
+@user_passes_test(lambda u: u.is_superuser, login_url='/login/')
+def sb_todolist_modify(request, id):
+    try:
+        title ='修改待办事宜'
+        if request.POST:
+            info = request.POST.get('info', None)
+            if info:
+                info = info.strip()
+                if len(info) == 0:
+                    return render(request, 'sb/todolist_add_modify.html',
+                    {
+                        'title': title,
+                        'errormsg':'是不是傻，待办事宜别空着啊！',        
+                    })
+                else:
+                    todo = TodoList.objects.get(id=id)
+                    todo.info = info
+                    todo.save()
+                    return HttpResponseRedirect('/sb/todolist/')
+            else:
+                return render(request, 'sb/todolist_add_modify.html',
+                {
+                    'title': title,
+                    'errormsg':'是不是傻，待办事宜别空着啊！',        
+                })
+        else:
+            return render(request, 'sb/todolist_add_modify.html',
+            {
+                'title': title,
+            })
+
+    except Exception as ex:
+        return render(request, 'HYHR/error.html',
+        {
+            'errormessage': ex,
+            'year':datetime.now().year
+        }) 
