@@ -72,6 +72,11 @@
                                 {{form.customerStatus}}
                                 {%for field in form%}{% if field.name == 'customerStatus' %}<label class="validation-summary-errors">{%for error in field.errors%}{{error}}{%endfor%}</label>{%endif%}{%endfor%}
                             </div>
+                            <label class="col-sm-2 control-label" for="itemType">内容类型: </label>
+                            <div class="col-sm-2">
+                                {{form.itemType}}
+                                {%for field in form%}{% if field.name == 'itemType' %}<label class="validation-summary-errors">{%for error in field.errors%}{{error}}{%endfor%}</label>{%endif%}{%endfor%}
+                            </div>
                             {%endif%}
                        </div>
                     </div>
@@ -93,6 +98,7 @@
         <hr />
         {% if result %}
         <div class="table-responsive">
+        {% if itemType == '0' %}
         <table class="table table-hover">
             <thead>
                 <tr>
@@ -135,6 +141,39 @@
                 {% endfor %}
             </tbody>
         </table>
+        {%else%}
+        <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>姓名</th>
+                        <th>身份证号</th>
+                        <th>手机号</th>
+                        <th>业务名称</th>
+                        <th>总价</th>
+                        <th>开始日期</th>
+                        <th>截至日期</th>
+                        <th>订单日期</th>   
+                        <th>状态</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rst in result %}
+                        <tr>
+                            <td>{{rst.customer.name}}</td>
+                            <td>{{rst.customer.pid}}</td>
+                            <td>{{rst.customer.phone}}</td>
+                            <td>{{rst.product.name}}</td>
+                            
+                            <td>{{rst.stotal_price}}</td>
+                            <td>{{rst.svalidFrom.year}}-{{rst.svalidFrom.month|stringformat:"02d"}}-{{rst.svalidFrom.day|stringformat:"02d"}}</td>
+                            <td>{{rst.svalidTo.year}}-{{rst.svalidTo.month|stringformat:"02d"}}-{{rst.svalidTo.day|stringformat:"02d"}}</td>
+                            <td>{{rst.orderDate}}</td>   
+                            <td>{{rst.customer.status}}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
          <table>
              <tbody>
                  <tr>

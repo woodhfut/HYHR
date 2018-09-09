@@ -160,13 +160,20 @@ class QueryForm(forms.Form):
     productName = forms.IntegerField(required = False,
                                 widget= forms.Select(choices=PN_OPTIONS))
 
-    CN_OPTIONS =(
+    CS_OPTIONS =(
         (0, '不包含减员客户'),
         (1,'包含减员客户')
     )
     customerStatus = forms.IntegerField(required = False,
-                            widget= forms.Select(choices=CN_OPTIONS))
+                            widget= forms.Select(choices=CS_OPTIONS))
     
+    IT_OPTIONS=(
+        (0,'产品订单'),
+        (1,'服务费订单')
+    )
+    itemType = forms.IntegerField(required=False, 
+                            widget=forms.Select(choices=IT_OPTIONS))
+
     def __init__(self, *args, **kwargs):
         super(QueryForm,self).__init__(*args, **kwargs)
         #self.fields['productName'].widget.choices = Product.objects.all().values_list('id','name')

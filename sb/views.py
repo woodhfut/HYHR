@@ -77,13 +77,15 @@ def sb_query(request):
         'dateFrom' in request.GET or \
         'dateTo' in request.GET or \
         'productName' in request.GET or \
-        'customerStatus' in request.GET:
+        'customerStatus' in request.GET or \
+        'itemType' in request.GET:
         name = request.GET.get('name',None)
         pid = request.GET.get('pid',None)
         dateFrom = request.GET.get('dateFrom',None)
         dateTo = request.GET.get('dateTo',None)
         prodName = request.GET.get('productName', 0)
         cstatus = request.GET.get('customerStatus', 0)
+        itemType = request.GET.get('itemType', 0)
         pageid = request.GET.get('page_id',1)
         pagecount = request.GET.get('page_count',DEFAULT_PAGE_COUNT)
         collapse = request.GET.get('collapse',1)
@@ -112,14 +114,21 @@ def sb_query(request):
                         'dateFrom':dateFrom,
                         'dateTo':dateTo,
                         'productName': int(prodName), 
-                        'customerStatus': int(cstatus)
+                        'customerStatus': int(cstatus),
+                        'itemType': int(itemType),
                         })
         if form.is_valid():
             try:
                 if int(cstatus) == 0:
-                    result = Product_Order.objects.filter(customer__status__gt = 0).order_by('customer__name','-id')
+                    if int(itemType) == 0:
+                        result = Product_Order.objects.filter(customer__status__gt = 0).order_by('customer__name','-id')
+                    else:
+                        result = Service_Order.objects.filter(customer__status__gt = 0).order_by('customer__name','-id')
                 else:
-                    result = Product_Order.objects.order_by('customer__name','-id')
+                    if int(itemType) == 0:
+                        result = Product_Order.objects.order_by('customer__name','-id')
+                    else:
+                        result = Service_Order.objectsorder_by('customer__name','-id')
                 
                 if name and len(name.strip()) > 0:
                     result = result.filter(customer__name__icontains=name)
@@ -148,8 +157,12 @@ def sb_query(request):
                     rst = paginator.page(paginator.num_pages)
             except Exception as ex:
                 logger.warn('Query get exception {}'.format(ex))
-                result = Product_Order.objects.none()
-                rst = Product_Order.objects.none()
+                if int(itemType) == 0:
+                    result = Product_Order.objects.none()
+                    rst = Product_Order.objects.none()
+                else:
+                    result = Service_Order.objects.none()
+                    rst = Service_Order.objects.none()
             
             return render(request,'sb/sb_query.html',
                         {
@@ -158,6 +171,7 @@ def sb_query(request):
                             'collapse': collapse,
                             'result': rst,
                             'form':form,
+                            'itemType': itemType,
                             'year': datetime.now().year
                         })
         else:
