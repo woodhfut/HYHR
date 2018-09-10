@@ -18,6 +18,7 @@ import threading
 import time
 import csv
 from wsgiref.util import FileWrapper
+from django.db.models import Sum
 import logging
 logger = logging.getLogger(__name__)
 
@@ -456,8 +457,10 @@ def sb_reorder(request,code,pid):
                                 s_order.save()
                                 op.save()
                                 customer.save()
-                                ptodo.save()
-                                stodo.save()
+                                if p_cd['note']:
+                                    ptodo.save()
+                                if s_cd['snote']:
+                                    stodo.save()
                         else:                            
                             return render(request, 'sb/sb_reorder.html',
                             {
@@ -488,7 +491,8 @@ def sb_reorder(request,code,pid):
                         p_order.save()
                         op.save()
                         customer.save()
-                        ptodo.save()
+                        if p_cd['note']:
+                            ptodo.save()
 
             except Exception as ex:
                 return render(request, 'HYHR/error.html',
@@ -499,6 +503,7 @@ def sb_reorder(request,code,pid):
             return render(request, 'sb/reorder_success.html',
             {
                 'title':'{}续费成功!'.format(product.name),
+                'code': code,
                 'year':datetime.now().year
             })
         else:
@@ -1013,6 +1018,59 @@ def sb_todolist_modify(request, id):
                 'title': title,
             })
 
+    except Exception as ex:
+        return render(request, 'HYHR/error.html',
+        {
+            'errormessage': ex,
+            'year':datetime.now().year
+        }) 
+
+
+@user_passes_test(lambda u: u.is_superuser, login_url='/login/')
+def sb_partnerbillcheck(request):
+    try:
+        if request.POST:
+            pass
+        else:
+            pname = request.GET.get('name', 'first')
+            if pname and pname !='first':
+                pexists = Partner.objects.filter(name=pname).exists()
+                if not pexists:
+                    return render(request, 'sb/partnerbillcheck.html', 
+                    {
+                        'error': '不存在该合伙人.',
+                        'pname' : pname,
+                    })
+                else:                   
+                    srecords = Service_Order.objects.filter(partner__name = pname).exclude(sprice2Partner=0).order_by('partner__name', '-id')
+                    if not srecords.exists():
+                        return render(request, 'sb/partnerbillcheck.html',
+                        {
+                            'error': '与该合伙人的费用已结清或者不曾有交易往来.',
+                            'pname': pname,
+
+                        })
+                    else:
+                        return render(request, 'sb/partnerbillcheck.html',
+                        {
+                            'pname': pname,
+                            'srecords': srecords,
+                        })   
+            elif pname == 'first':
+                return render(request, 'sb/partnerbillcheck.html',
+                {
+                    
+                }) 
+                   
+            else:
+                srecords = Service_Order.objects.exclude(sprice2Partner=0).order_by('partner__name', '-id')
+                summary = srecords.values_list('partner__name').annotate(total=Sum('sprice2Partner'))
+                return render(request, 'sb/partnerbillcheck.html',
+                {
+                    'srecords': srecords,
+                    'summary': summary['total'],
+                })     
+                     
     except Exception as ex:
         return render(request, 'HYHR/error.html',
         {

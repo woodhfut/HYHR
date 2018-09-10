@@ -43,8 +43,11 @@
                         <ul class="dropdown-menu">
                             <li><a href="{% url 'sb:sb_index' %}"><span class="glyphicon glyphicon-info-sign" style="padding-right: 20%"></span>业务简介</a> </li>
                             <li><a href="{% url 'sb:sb_query' %}"><span class="glyphicon glyphicon-search" style="padding-right: 20%"></span>业务查询</a> </li>
+                            
                             {% if user.is_authenticated and user.is_superuser %}
                             <!-- <li><a href="{% url 'sb:sb_todolist' %}"><span class="glyphicon glyphicon glyphicon-check" style="padding-right: 20%"></span>待办事宜</a> </li> -->
+                            <li class="divider"></li>
+                            <li><a href="{% url 'sb:sb_partnerbillcheck' %}"><span class="glyphicon glyphicon-cog" style="padding-right: 20%"></span>合伙人结账</a> </li>
                             <li class="offset-right dropdown">
                                     <a href="#" class="dropdown-toggle"><span class="glyphicon glyphicon-check" style="padding-right: 20%"></span>待办事宜<b class="caret"></b></a>
                                     <ul class="dropdown-menu">
@@ -61,7 +64,7 @@
                                         <li><a href="{% url 'sb:sb_billcheck' 1 %}">对账</a></li>
                                     </ul>
                                   </li>
-                            <li class="divider"></li>
+
                             <li class="offset-right dropdown">
                                     <a href="#" class="dropdown-toggle"><span class="glyphicon glyphicon-usd" style="padding-right: 20%"></span>公积金<b class="caret"></b></a>
                                     <ul class="dropdown-menu">
