@@ -29,9 +29,7 @@ class CustomerOperations(Enum):
     REORDER =2
     REMOVE = 3
 
-
-
-DEFAULT_PAGE_COUNT = 15    
+ 
 
 
 def SendPushMessage(bot, customers, message):

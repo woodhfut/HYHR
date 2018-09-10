@@ -8,7 +8,7 @@ from django.db import transaction
 from .forms import QueryForm, CustomerForm, Product_OrderForm, Service_OrderForm
 from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, PayMethod, Operations, User_extra_info, TodoList
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, DEFAULT_PAGE_COUNT, SendPushMessage
+from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, SendPushMessage
 from calendar import monthrange
 from wxpy import *
 import os
@@ -87,12 +87,12 @@ def sb_query(request):
         cstatus = request.GET.get('customerStatus', 0)
         itemType = request.GET.get('itemType', 0)
         pageid = request.GET.get('page_id',1)
-        pagecount = request.GET.get('page_count',DEFAULT_PAGE_COUNT)
+        pagecount = request.GET.get('page_count',settings.DEFAULT_PAGE_COUNT)
         collapse = request.GET.get('collapse',1)
         try:
             pagecount = int(pagecount)
         except:
-            pagecount = DEFAULT_PAGE_COUNT
+            pagecount = settings.DEFAULT_PAGE_COUNT
         
         try:
             pageid = int(pageid)
@@ -751,7 +751,7 @@ def sb_billcheck(request, code):
                     'message': '***当前户中所有客户已缴纳下月{},无需对账.***'.format(product.name)
                 })
                 
-            pagecount = DEFAULT_PAGE_COUNT
+            pagecount = settings.DEFAULT_PAGE_COUNT
             pagenum = 1
             
             if request.POST:
@@ -761,7 +761,7 @@ def sb_billcheck(request, code):
                 try:
                     pagecount = int(pagecount)
                 except:
-                    pagecount = DEFAULT_PAGE_COUNT
+                    pagecount = settings.DEFAULT_PAGE_COUNT
                 try:
                     pagenum = int(pagenum)
                 except:
