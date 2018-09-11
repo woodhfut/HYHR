@@ -755,7 +755,7 @@ def sb_billcheck(request, code):
             startdate = date(today.year, today.month, 1)
             enddate = date(today.year, today.month, monthrange(today.year, today.month)[1])
             logger.info('startdate:{}, enddate:{}'.format(startdate.strftime('%Y-%m-%d'), enddate.strftime('%Y-%m-%d')))
-            porders = Product_Order.objects.filter(product__code =code,  validFrom__lte=startdate, validTo__gte=enddate,customer__in=customers)
+            porders = Product_Order.objects.filter(product__code =code,  validFrom__lte=startdate, validTo__gte=enddate,customer__in=customers).order_by('id')
 
             snextmonth = date(today.year, today.month+1, 1)
             enextmonth = date(today.year, today.month+1, monthrange(today.year, today.month+1)[1])
