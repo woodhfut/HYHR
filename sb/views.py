@@ -60,9 +60,9 @@ def export_query_csv_thread(request, rst_list, itemType):
         with open(os.path.join(settings.STATICFILES_DIRS[0],'HYHR/{}'.format(filename)), 'w', encoding='gb2312') as f:
             writer = csv.writer(f) 
             if itemType == 0: #Product order
-                writer.writerow(['姓名', '身份证号', '手机号', '业务名称', '所在区县', '户口性质', '基数', '总价','开始日期', '截至日期', '下单日期', '状态'])
+                writer.writerow(['姓名', '身份证号', '手机号', '业务名称','业务类型', '所在区县', '户口性质', '基数', '总价','开始日期', '截至日期', '下单日期', '状态'])
                 for rst in rst_list:               
-                    item = [rst.customer.name, rst.customer.pid, rst.customer.phone, rst.product.name, rst.district, rst.customer.get_hukou_display(), rst.product_base, rst.total_price, rst.validFrom, rst.validTo, rst.orderDate, rst.customer.status]
+                    item = [rst.customer.name, rst.customer.pid, rst.customer.phone, rst.product.name, rst.orderType, rst.district, rst.customer.get_hukou_display(), rst.product_base, rst.total_price, rst.validFrom, rst.validTo, rst.orderDate, rst.customer.status]
                     writer.writerow(item)
             elif itemType == 1: #service order
                 writer.writerow(['姓名', '身份证号', '手机号', '业务名称', '户口性质', '总价','开始日期', '截至日期', '下单日期', '状态'])
@@ -228,8 +228,8 @@ def sb_add(request, code):
                         statusvalue = CustomerStatusCode.SB
                     elif product.code == ProductCode.GJJ.value:#gjj
                         statusvalue = CustomerStatusCode.GJJ
-                    elif product.code == ProductCode.OTHER.value:
-                        statusvalue = CustomerStatusCode.OTHER
+                    elif product.code == ProductCode.GS.value:
+                        statusvalue = CustomerStatusCode.GS
 
                     existedCuStatus = statusvalue.value
 
@@ -647,8 +647,8 @@ def sb_remove_id(request,code, pid):
             cstatus2remove = CustomerStatusCode.SB
         elif product.code == ProductCode.GJJ.value:
             cstatus2remove = CustomerStatusCode.GJJ
-        elif product.code == ProductCode.OTHER.value:
-            cstatus2remove = CustomerStatusCode.OTHER
+        elif product.code == ProductCode.GS.value:
+            cstatus2remove = CustomerStatusCode.GS
         
         try:
             #todo: if client has ordered next month of product, you are not allowed to remove it. unless refund...
@@ -712,8 +712,8 @@ def getbillcheckCustomers(code):
         cscode = CustomerStatusCode.SB
     elif product.code == ProductCode.GJJ.value:
         cscode = CustomerStatusCode.GJJ
-    elif product.code == ProductCode.OTHER.value:
-        cscode = CustomerStatusCode.OTHER
+    elif product.code == ProductCode.GS.value:
+        cscode = CustomerStatusCode.GS
 
     customers =[c for c in Customer.objects.filter(status__gt = CustomerStatusCode.Disabled.value) if c.status & cscode.value == cscode.value]
 
@@ -745,8 +745,8 @@ def sb_billcheck(request, code):
             cscode = CustomerStatusCode.SB
         elif product.code == ProductCode.GJJ.value:
             cscode = CustomerStatusCode.GJJ
-        elif product.code == ProductCode.OTHER.value:
-            cscode = CustomerStatusCode.OTHER
+        elif product.code == ProductCode.GS.value:
+            cscode = CustomerStatusCode.GS
 
         customers =[c for c in Customer.objects.filter(status__gt = CustomerStatusCode.Disabled.value) if c.status & cscode.value == cscode.value]
 

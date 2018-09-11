@@ -12,7 +12,7 @@ from collections import OrderedDict
 class ProductCode(Enum):
     SB = 1
     GJJ = 2
-    OTHER = 4
+    GS = 4
 
 
 @unique
@@ -20,7 +20,7 @@ class CustomerStatusCode(Enum):
     Disabled = 0
     SB = 1
     GJJ = 2
-    OTHER = 4
+    GS = 4
 
 
 @unique

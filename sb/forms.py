@@ -156,6 +156,7 @@ class QueryForm(forms.Form):
         (0, '全部'),
         (1, '社保'),
         (2, '公积金'),
+        (4, '个税'),
     )
     productName = forms.IntegerField(required = False,
                                 widget= forms.Select(choices=PN_OPTIONS))

@@ -73,6 +73,15 @@
                                         <li><a href="{% url 'sb:sb_billcheck' 2 %}">对账</a></li>
                                     </ul>
                             </li>
+
+                            <li class="offset-right dropdown">
+                                    <a href="#" class="dropdown-toggle"><span class="glyphicon glyphicon-credit-card" style="padding-right: 20%"></span>个税<b class="caret"></b></a>
+                                    <ul class="dropdown-menu">
+                                        <li><a href="{% url 'sb:sb_add' 4 %}">新增</a> </li>
+                                        <li><a href="{% url 'sb:sb_remove' 4 %}">减员</a></li>
+                                        <li><a href="{% url 'sb:sb_billcheck' 4 %}">对账</a></li>
+                                    </ul>
+                            </li>
                             {% endif %}
                         </ul>
                     </li>
