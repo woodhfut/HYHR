@@ -51,11 +51,11 @@ def sb_subsb(request, id):
                   })
 
 def export_query_csv_thread(request, rst_list, itemType):
-    if request.session.get('result_file'):
-        filename = request.session.get('result_file')
+    if request.session.get('result_file_query'):
+        filename = request.session.get('result_file_query')
     else:
-        filename = request.user.username + '.csv'
-        request.session['result_file'] = filename
+        filename = request.user.username + '_query.csv'
+        request.session['result_file_query'] = filename
     try:
         with open(os.path.join(settings.STATICFILES_DIRS[0],'HYHR/{}'.format(filename)), 'w', encoding='gb2312') as f:
             writer = csv.writer(f) 
@@ -733,7 +733,24 @@ def getbillcheckCustomers(code):
     else:
         return []
 
-        
+def export_billcheck_csv_thread(request, rst_list):
+    if request.session.get('result_file_billcheck'):
+        filename = request.session.get('result_file_billcheck')
+    else:
+        filename = request.user.username + '_billcheck.csv'
+        request.session['result_file_billcheck'] = filename
+    try:
+        with open(os.path.join(settings.STATICFILES_DIRS[0],'HYHR/{}'.format(filename)), 'w', encoding='gb2312') as f:
+            writer = csv.writer(f) 
+            
+            writer.writerow(['姓名', '身份证号', '手机号','微信', '业务名称', '所在区县','户口性质','基数','状态'])
+            for rst in rst_list:               
+                item = [rst.customer.name, rst.customer.pid, rst.customer.phone, rst.customer.wechat, rst.product.name, rst.district, rst.customer.get_hukou_display(),rst.product_base, rst.customer.status]
+                writer.writerow(item)
+           
+    except Exception as ex:
+        logger.error('exception in export thread. {}'.format(ex))
+                
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
 def sb_billcheck(request, code):
     try:
@@ -769,7 +786,8 @@ def sb_billcheck(request, code):
                     'title': title,
                     'message': '***当前户中所有客户已缴纳下月{},无需对账.***'.format(product.name)
                 })
-                
+
+            threading.Thread(target=export_billcheck_csv_thread, args=(request, porders,)).start()    
             pagecount = settings.DEFAULT_PAGE_COUNT
             pagenum = 1
             
@@ -828,8 +846,8 @@ def checkQR(qrpath):
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
 def sb_pushclient(request, code):
     try:
-        if request.POST:
-            global wxpybot
+        global wxpybot
+        if request.POST:           
             if not wxpybot and 'getQR' in request.POST:
                 qrpath = os.path.join(settings.STATICFILES_DIRS[0], 'HYHR/img/QR.png')
                 if os.path.exists(qrpath):
@@ -892,10 +910,10 @@ def sb_pushclient(request, code):
             'year':datetime.now().year
         })
      
-def export_query_csv(request):
-    if request.session.get('result_file'):
+def export_csv(request, path):
+    if request.session.get('result_file_{}'.format(path)):
         try:
-            filename = request.session['result_file']
+            filename = request.session['result_file_{}'.format(path)]
             file_route = os.path.join(settings.STATICFILES_DIRS[0],'HYHR/{}'.format(filename))
             wrapper     = FileWrapper(open(file_route, 'rb'))
 
@@ -906,7 +924,7 @@ def export_query_csv(request):
         response['Content-Length']      = os.path.getsize(file_route)
         return response
     else:
-        return HttpResponse('Search result lost.')
+        return HttpResponse('{} result lost.'.format(path))
 
 
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')

@@ -64,7 +64,7 @@
                     <option value="100">100</option>
                 </select>
              </td>
-             <td style="width:85%; text-align:center">
+             <td style="width:80%; text-align:center">
                 <span >
                     {% if porders.has_previous%}
                     <a href="#" onclick="navigatetopagewithQuery(1)"><span class="glyphicon glyphicon-fast-backward"></span></a>
@@ -81,8 +81,8 @@
                     
                 </span>
              </td>
-             <td style="width:10%">
-                <span >共 {{porders.paginator.count}} 项</span>
+             <td style="width:15%">
+                <span >共 {{porders.paginator.count}} 项 </span><a style="background-color: skyblue" href="/sb/export/csv/billcheck">导出到CSV</a>
              </td>
          </tr>
      </tbody>
