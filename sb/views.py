@@ -905,21 +905,8 @@ def export_query_csv(request):
 def sb_todolist(request):
     try:
         if request.POST:
-            checkall = request.POST.get('checkall', False)
-            todos = None
-            if checkall:
-                todos = TodoList.objects.filter(isfinished=False)
-
-            else:
-                todoids = request.POST.getlist('subcheckboxes')
-                intids =[int(sid) for sid in todoids]
-                todos = TodoList.objects.filter(id__in=intids)
-
-            if todos and todos.exists():
-                for todo in todos:
-                    todo.isfinished = True
-                    todo.save()
-
+            todoids = request.POST.getlist('subcheckboxes')
+            TodoList.objects.filter(id__in=todoids).update(isfinished=True)
             return HttpResponseRedirect('.')
             
         else:
@@ -971,10 +958,7 @@ def sb_todolist_add(request):
                         })
                     else:
                         todo.save()
-                        return render(request, 'sb/todolist_add_success.html',
-                        {
-
-                        })
+                        return render(request, 'sb/todolist_add_success.html')
             else:
                 return render(request, 'sb/todolist_add_modify.html',
                 {
@@ -1036,7 +1020,11 @@ def sb_todolist_modify(request, id):
 def sb_partnerbillcheck(request):
     try:
         if request.POST:
-            pass
+            pname = request.POST.get('partnerName', '')
+            sorderlist = request.POST.getlist('subcheckboxes')
+            Service_Order.objects.filter(id__in=sorderlist).update(sprice2Partner=0)
+
+            return HttpResponseRedirect('./?next=/&name={}'.format(pname))
         else:
             pname = request.GET.get('name', 'first')
             if pname and pname !='first':
@@ -1057,24 +1045,24 @@ def sb_partnerbillcheck(request):
 
                         })
                     else:
+                        summary = Service_Order.objects.filter(partner__name = pname).exclude(sprice2Partner=0).values('partner__name').annotate(Sum('sprice2Partner'))
                         return render(request, 'sb/partnerbillcheck.html',
                         {
                             'pname': pname,
                             'srecords': srecords,
+                            'summary': summary,
                         })   
             elif pname == 'first':
-                return render(request, 'sb/partnerbillcheck.html',
-                {
-                    
-                }) 
+                return render(request, 'sb/partnerbillcheck.html') 
                    
             else:
                 srecords = Service_Order.objects.exclude(sprice2Partner=0).order_by('partner__name', '-id')
-                summary = srecords.values_list('partner__name').annotate(total=Sum('sprice2Partner'))
+                #summary = Service_Order.objects.raw('select id, partner_id, sum(sprice2Partner) from sb_Service_Order where sprice2Partner <> 0 group by partner_id')
+                summary = Service_Order.objects.exclude(sprice2Partner=0).values('partner__name').annotate(Sum('sprice2Partner'))
                 return render(request, 'sb/partnerbillcheck.html',
                 {
                     'srecords': srecords,
-                    'summary': summary['total'],
+                    'summary': summary,
                 })     
                      
     except Exception as ex:

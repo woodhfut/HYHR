@@ -29,7 +29,27 @@
     </div>
 </form>
 {% if summary %}
-<p> {{summary}}</p>
+<div class="form-group">
+		<label class="col-sm-2 control-label">合计信息：</label>
+		<div class="col-sm-4">
+            <table class="table table-strip">
+                <thead>
+                    <tr>
+                        <th>合伙人姓名</th>
+                        <th>应付金额</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in summary %}
+                        <tr>
+                            <td>{{s.partner__name}}</td>
+                            <td>{{s.sprice2Partner__sum}}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+			
+        </div>
 {% endif %}
 
 {% if srecords %}
@@ -67,9 +87,11 @@
     <div class="form-group">
             <div class="col-sm-2">
                 <button type="submit" class="btn btn-primary">确定</button>
+                <input type="hidden" id='partnerName' name='partnerName' value="{{pname}}"/>
             </div>
         </div>
 </form>
+
 {% endif %}
 {% endblock %}
 
