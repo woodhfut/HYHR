@@ -18,4 +18,5 @@ urlpatterns = [
     url(r'^todolist/add/$', views.sb_todolist_add, name='sb_todolist_add'),
     url(r'^todolist/modify/(?P<id>\d+)/$', views.sb_todolist_modify, name='sb_todolist_modify'),
     url(r'^partnerbillcheck/$', views.sb_partnerbillcheck, name='sb_partnerbillcheck'),
+    url(r'^operationquery/$', views.sb_operationquery, name='sb_operationquery'),
 ]

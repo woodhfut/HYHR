@@ -164,7 +164,13 @@ class Operations(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete = models.CASCADE)
     oper_date = models.DateTimeField(auto_now_add=True)
-    operation = models.PositiveSmallIntegerField()
+    
+    oper_Type = (
+        (1,'新增'),
+        (2,'续费'),
+        (3, '减员'),
+        )
+    operation = models.PositiveSmallIntegerField(choices=oper_Type)
 
     def __str__(self):
         return self.customer.name + '(' + self.product.name + ':' + str(self.operation) + ':' +  self.oper_date.strftime('%Y-%m-%d %H:%M:%S') + ')'

@@ -175,8 +175,8 @@ class QueryForm(forms.Form):
     itemType = forms.IntegerField(required=False, 
                             widget=forms.Select(choices=IT_OPTIONS))
 
-    def __init__(self, *args, **kwargs):
-        super(QueryForm,self).__init__(*args, **kwargs)
+    # def __init__(self, *args, **kwargs):
+    #     super(QueryForm,self).__init__(*args, **kwargs)
         #self.fields['productName'].widget.choices = Product.objects.all().values_list('id','name')
         #self.fields['customerStatus'].widget.choices = Customer.objects.all().values_list('id','status')    
 
@@ -212,4 +212,24 @@ class QueryForm(forms.Form):
         if cdf and cdt and cdf > cdt:
             raise forms.ValidationError(_('DateTo should be bigger than DateFrom.'), code=_('invalid_date'))
         return cdt
-    
+
+
+class OperationQueryForm(forms.Form):
+    dateFrom = forms.DateTimeField(required=False,widget=AdminDateWidget(), label='开始时间')
+    dateTo = forms.DateTimeField(required=False,widget=AdminDateWidget(), label='截至时间')
+
+    PN_OPTIONS = (
+        (0, '全部'),
+        (1, '社保'),
+        (2, '公积金'),
+        (4, '个税'),
+    )
+    productName = forms.IntegerField(required = False,
+                                widget= forms.Select(choices=PN_OPTIONS))
+
+    def clean_dateTo(self):
+        cdf = self.cleaned_data.get('dateFrom',None)
+        cdt = self.cleaned_data.get('dateTo', None)
+        if cdf and cdt and cdf > cdt:
+            raise forms.ValidationError(_('DateTo should be bigger than DateFrom.'), code=_('invalid_date'))
+        return cdt

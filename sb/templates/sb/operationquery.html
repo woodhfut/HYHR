@@ -1,0 +1,157 @@
+{% extends "HYHR/layout.html" %}
+
+{% block content %}
+<!-- <link rel="stylesheet" type="text/css" href="/static/admin/css/base.css" /> 
+<link rel="stylesheet" type="text/css" href="/static/admin/css/forms.css" />  -->
+<script type="text/javascript" src="/admin/jsi18n/"></script>
+<script type="text/javascript" src="/static/admin/js/core.js"></script>
+<script type="text/javascript" src="/static/admin/js/vendor/jquery/jquery.js"></script>
+<script type="text/javascript" src="/static/admin/js/jquery.init.js"></script>
+
+<script type="text/javascript" src="/static/admin/js/calendar.js"></script>
+<script type="text/javascript" src="/static/admin/js/admin/DateTimeShortcuts.js"></script>
+
+<link rel="stylesheet" type="text/css" href="/static/HYHR/css/paginator.css" />
+
+<h2> 增减员查询</h2>
+
+<div class="container">
+        <div class="row">
+            <form class="form-horizontal" role="form" action="." method="get">
+                {% if next %}
+                    <input type="hidden" name="next" value="{{ next }}">
+                {% else %}
+                    <input type="hidden" name="next" value="/">
+                {% endif %}
+    
+                <div class="form-group">
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="dateFrom">开始日期: </label>
+                        <div class="col-sm-2" >
+                            {{form.dateFrom}} 
+                            {%for field in form%}{% if field.name == 'dateFrom' %}<label class="validation-summary-errors">{%for error in field.errors%}{{error}}{%endfor%}</label>{%endif%}{%endfor%}
+                        </div>
+
+                        <label class="col-sm-2 control-label" for="dateTo">截至日期: </label>
+                        <div class="col-sm-2">
+                            {{form.dateTo}}
+                            {%for field in form%}{% if field.name == 'dateTo' %}<label class="validation-summary-errors">{%for error in field.errors%}{{error}}{%endfor%}</label>{%endif%}{%endfor%}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label" for="productName">业务类型: </label>
+                        <div class="col-sm-2" >
+                            {{form.productName}} 
+                            {%for field in form%}{% if field.name == 'productName' %}<label class="validation-summary-errors">{%for error in field.errors%}{{error}}{%endfor%}</label>{%endif%}{%endfor%}
+                        </div>
+                    </div>
+                </div>
+    
+                <div class="form-group">
+                    <div class="col-sm-offset-2 col-sm-10">
+                        <button type="button" class="btn btn-primary" onclick="navigatetopagewithQuery(1)">查询</button>
+                        <input type="hidden" id="page_count" name="page_count" />
+                        <input type="hidden" id="page_id" name="page_id" />
+                    </div>
+                </div>
+            </form>
+        </div>
+    
+        <div class="row">
+            <hr />
+            {% if result %}
+            <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>姓名</th>
+                        <th>身份证号</th>
+                        <th>手机号</th>
+                        <th>业务名称</th>
+                        <th>操作日期</th>   
+                        <th>所做操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rst in result %}
+                        <tr>
+                            <td>{{rst.customer.name}}</td>
+                            <td>{{rst.customer.pid}}</td>
+                            <td>{{rst.customer.phone}}</td>
+                            <td>{{rst.product.name}}</td>
+                            <td>{{rst.oper_date}}</td>   
+                            <td>{{rst.get_operation_display}}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+             <table>
+                 <tbody>
+                     <tr>
+                         <td style="width:5%">
+                            <select id="pagecount" onchange="pageCountChange()">
+                                <option value="15">15</option>
+                                <option value="30">30</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                         </td>
+                         <td style="width:80%; text-align:center">
+                            <span >
+                                {% if result.has_previous%}
+                                <a href="#" onclick="navigatetopagewithQuery(1)"><span class="glyphicon glyphicon-fast-backward"></span></a>
+                                <a href="#" onclick="navigatetopagewithQuery({{result.previous_page_number}})"><span class="glyphicon glyphicon-backward"></span></a>
+                                {% endif %}
+                                <span>
+                                    第 {{result.number}} / {{result.paginator.num_pages}}页
+                                </span>
+                
+                                {% if result.has_next %}
+                                    <a href="#" onclick="navigatetopagewithQuery({{result.next_page_number}})"><span class="glyphicon glyphicon-forward"></span></a>
+                                <a href="#" onclick="navigatetopagewithQuery({{result.paginator.num_pages}})"><span class="glyphicon glyphicon-fast-forward"></a>
+                                {%endif%}
+                                
+                            </span>
+                         </td>
+                         <td style="width:15%">
+                            <span >共 {{result.paginator.count}} 项</span> <a style="background-color: skyblue" href="/sb/export/csv/query">导出到CSV</a>
+                         </td>
+                     </tr>
+                 </tbody>
+             </table>                  
+            </div>
+            {%else%}
+                {% if form.errors %}
+                    <p class="validation-summary-errors">Errors met during the Query, make sure you enter all the field correctly and try again.</p>
+                {%else%}
+                    <p>No result found.</p>
+                {% endif %}
+            
+            {%endif%}
+            
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block scripts%}
+
+<script type="text/javascript">
+$(document).ready(function () {
+    $('#pagecount').val('{{pagecount}}');
+});
+
+function pageCountChange()
+{
+   $('#page_count').val($('#pagecount').val());
+   $('form').submit();
+}
+function navigatetopagewithQuery(pageid)
+{
+    $('#page_id').val(pageid);
+    $('#page_count').val($('#pagecount').val());
+    $('form').submit();
+}
+</script>
+
+{%endblock%}

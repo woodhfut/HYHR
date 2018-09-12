@@ -5,8 +5,9 @@ from datetime import datetime,date
 from django.contrib.auth.views import login_required
 from django.contrib.auth.decorators import user_passes_test, permission_required
 from django.db import transaction
-from .forms import QueryForm, CustomerForm, Product_OrderForm, Service_OrderForm
-from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, PayMethod, Operations, User_extra_info, TodoList
+from .forms import QueryForm, CustomerForm, Product_OrderForm, Service_OrderForm, OperationQueryForm
+from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, \
+                    PayMethod, Operations, User_extra_info, TodoList
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, SendPushMessage
 from calendar import monthrange
@@ -1113,4 +1114,84 @@ def sb_partnerbillcheck(request):
         {
             'errormessage': ex,
             
-        }) 
+        })
+
+
+@user_passes_test(lambda u: u.is_superuser, login_url='/login/')
+def sb_operationquery(request):
+    try:
+        if 'dateFrom' in request.GET or 'dateTo' in request.GET or 'productName' in request.GET:
+            dateFrom = request.GET.get('dateFrom', None)
+            dateTo = request.GET.get('dateTo', None)
+            prodName = request.GET.get('productName', 0) #all
+            pagecount = request.GET.get('page_count', settings.DEFAULT_PAGE_COUNT)
+            pageid = request.GET.get('page_id', 1)
+
+            opform = OperationQueryForm(
+                {
+                    'dateFrom': dateFrom.replace('/','-'),
+                    'dateTo':dateTo.replace('/','-'),
+                    'productName': prodName
+                }
+            )
+            if opform.is_valid():
+                try:
+                    pagecount = int(pagecount)
+                except:
+                    pagecount = settings.DEFAULT_PAGE_COUNT
+                
+                try:
+                    pageid = int(pageid)
+                except:
+                    pageid = 1
+                
+                try:
+                    prodName = int(prodName)
+                except:
+                    prodName  = 0
+
+                result = Operations.objects.exclude(operation=CustomerOperations.REORDER.value).order_by('customer__name','-id')
+                if dateFrom:
+                    df = opform.cleaned_data['dateFrom']
+                    result = result.filter(oper_date__gte=df)
+                
+                if dateTo:
+                    dt = opform.cleaned_data['dateTo']
+                    result = result.filter(oper_date__lte=dt)
+                
+                if prodName != 0:
+                    result = result.filter(product__code=prodName)
+                
+                paginator = Paginator(result, pagecount)
+                try:
+                    rst = paginator.page(pageid)
+                except PageNotAnInteger:
+                    rst = paginator.page(1)
+                except EmptyPage:
+                    rst = paginator.page(paginator.num_pages)
+
+                return render(request, 'sb/operationquery.html',
+                {
+                    'form': opform,
+                    'result': rst,
+                    'pagecount': pagecount,
+                    'pageid': pageid,
+                }) 
+                
+            else:
+                return render(request, 'sb/operationquery.html',
+                {
+                    'form': opform,
+                }) 
+        else:
+            opform = OperationQueryForm()
+            return render(request, 'sb/operationquery.html',
+            {
+                'form': opform,
+            })
+    except Exception as ex:
+        return render(request, 'HYHR/error.html',
+        {
+            'errormessage': ex,
+            
+        })
