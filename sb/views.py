@@ -205,7 +205,7 @@ def sb_query(request):
         return render(request, 'HYHR/error.html',
         {
             'errormessage': ex,
-            'year':datetime.now().year
+            
         }) 
 
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
@@ -254,7 +254,7 @@ def sb_add(request, code):
                                     'p_order_form': p_order_form,
                                     's_order_form': s_order_form,
                                     'dup_pid_error':'错误:已经存在身份证号为{},姓名为{}的客户, 请重新确认填写的身份证号是否正确.'.format(c_cd['pid'], customer.name),
-                                    'year':datetime.now().year    
+                                        
                             })
                         existedCuStatus = customer.status    
                         newStaValue = customer.status | statusvalue.value
@@ -294,7 +294,7 @@ def sb_add(request, code):
                                     'p_order_form': p_order_form,
                                     's_order_form': s_order_form,
                                     'dup_date_error':'错误:此时间段已经存在{}订单.'.format(product.name),
-                                    'year':datetime.now().year    
+                                        
                             })
 
                     s_order, created = Service_Order.objects.get_or_create(
@@ -321,7 +321,7 @@ def sb_add(request, code):
                                     'p_order_form': p_order_form,
                                     's_order_form': s_order_form,
                                     'dup_sdate_error':'错误:此时间段已经存在{}订单.'.format(product.name),
-                                    'year':datetime.now().year    
+                                        
                             })
                     #add info to operations table
                     op = Operations(customer = customer, 
@@ -348,13 +348,12 @@ def sb_add(request, code):
                 return render(request, 'HYHR/error.html',
                 {
                     'errormessage': ex,
-                    'year':datetime.now().year
+                    
                 })
             return render(request, 'sb/add_success.html',
                   {
                         'title': '添加成功',
                         'code':code,
-                        'year':datetime.now().year,    
                   })
         else:
             return render(request, 'sb/sb_add.html',
@@ -363,7 +362,7 @@ def sb_add(request, code):
                         'customer_form':customer_form,
                         'p_order_form': p_order_form,
                         's_order_form': s_order_form,
-                        'year':datetime.now().year    
+                            
                   })
     else:
         customer_form = CustomerForm()
@@ -376,7 +375,7 @@ def sb_add(request, code):
                         'customer_form':customer_form,
                         'p_order_form': p_order_form,
                         's_order_form': s_order_form,
-                        'year':datetime.now().year    
+                            
                   })
 
 
@@ -485,7 +484,7 @@ def sb_reorder(request,code,pid):
                                 'latestsvcRec': latestsvcRec,
                                 'chkServiceFee': chk,
                                 'dateValidError' : '错误：客户已经支付过所选时间段的服务费',
-                                'year':datetime.now().year
+                                
                                 })
                     else:
                         return render(request, 'sb/sb_reorder.html',
@@ -496,7 +495,7 @@ def sb_reorder(request,code,pid):
                                 's_order_form': s_order_form,
                                 'latestsvcRec': latestsvcRec,
                                 'chkServiceFee':chk,
-                                'year':datetime.now().year
+                                
                             })
                     
                 else:
@@ -512,13 +511,13 @@ def sb_reorder(request,code,pid):
                 return render(request, 'HYHR/error.html',
                 {
                     'errormessage': ex,
-                    'year':datetime.now().year
+                    
                 })
             return render(request, 'sb/reorder_success.html',
             {
                 'title':'{}续费成功!'.format(product.name),
                 'code': code,
-                'year':datetime.now().year
+                
             })
         else:
             s_order_form = Service_OrderForm(request.POST)            
@@ -530,7 +529,7 @@ def sb_reorder(request,code,pid):
                                 's_order_form': s_order_form,
                                 'latestsvcRec': latestsvcRec,
                                 'chkServiceFee':chk,
-                                'year':datetime.now().year
+                                
                                 })
     else:
         
@@ -548,7 +547,7 @@ def sb_reorder(request,code,pid):
                         'p_order_form': p_order_form,
                         's_order_form': s_order_form,
                         'latestsvcRec': latestsvcRec,
-                        'year':datetime.now().year
+                        
                         })
 
 
@@ -629,7 +628,7 @@ def sb_remove(request,code):
         return render(request, 'HYHR/error.html',
                 {
                     'errormessage': ex,
-                    'year':datetime.now().year
+                    
                 })
     
 
@@ -685,7 +684,7 @@ def sb_remove_id(request,code, pid):
             return render(request, 'HYHR/error.html',
                 {
                     'errormessage': ex,
-                    'year':datetime.now().year
+                    
                 })
         return render(request, 'sb/sb_remove_success.html',
         {
@@ -829,7 +828,7 @@ def sb_billcheck(request, code):
         return render(request, 'HYHR/error.html',
         {
             'errormessage': ex,
-            'year':datetime.now().year
+            
         })
 
 wxpybot = None
@@ -849,7 +848,7 @@ def sb_pushclient(request, code):
         global wxpybot
         if request.POST:           
             if not wxpybot and 'getQR' in request.POST:
-                qrpath = os.path.join(settings.STATICFILES_DIRS[0], 'HYHR/img/QR.png')
+                qrpath = os.path.join(settings.STATIC_ROOT, 'HYHR/img/QR.png')
                 if os.path.exists(qrpath):
                     try:
                         os.remove(qrpath)
@@ -907,7 +906,7 @@ def sb_pushclient(request, code):
         return render(request, 'HYHR/error.html',
         {
             'errormessage': ex,
-            'year':datetime.now().year
+            
         })
      
 def export_csv(request, path):
@@ -952,7 +951,7 @@ def sb_todolist(request):
         return render(request, 'HYHR/error.html',
         {
             'errormessage': ex,
-            'year':datetime.now().year
+            
         })
 
 
@@ -1000,7 +999,7 @@ def sb_todolist_add(request):
         return render(request, 'HYHR/error.html',
         {
             'errormessage': ex,
-            'year':datetime.now().year
+            
         })
 
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
@@ -1038,7 +1037,7 @@ def sb_todolist_modify(request, id):
         return render(request, 'HYHR/error.html',
         {
             'errormessage': ex,
-            'year':datetime.now().year
+            
         }) 
 
 
@@ -1095,5 +1094,5 @@ def sb_partnerbillcheck(request):
         return render(request, 'HYHR/error.html',
         {
             'errormessage': ex,
-            'year':datetime.now().year
+            
         }) 

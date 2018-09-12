@@ -15,9 +15,10 @@
 </form>
 {% else %}
     {% if QR %}
-        {% load staticfiles %}
+        
         <label class="col-sm-2 control-label">扫描以下二维码登录微信</label>
         <br/>
+        {% load staticfiles %}
         <img  style="width: 200px; height: 200px;" src="{% static 'HYHR/img/QR.png' %}" />
         <form class="form-horizontal" role="form" method="POST">
                 {% csrf_token %}
