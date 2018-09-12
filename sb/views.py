@@ -848,7 +848,10 @@ def sb_pushclient(request, code):
         global wxpybot
         if request.POST:           
             if not wxpybot and 'getQR' in request.POST:
-                qrpath = os.path.join(settings.STATIC_ROOT, 'HYHR/img/QR.png')
+                if settings.DEBUG:
+                    qrpath = os.path.join(settings.STATICFILES_DIRS[0], 'HYHR/img/QR.png')
+                else:
+                    qrpath = os.path.join(settings.STATIC_ROOT, 'HYHR/img/QR.png')
                 if os.path.exists(qrpath):
                     try:
                         os.remove(qrpath)
@@ -886,14 +889,29 @@ def sb_pushclient(request, code):
             else:
                 msg = request.POST.get('message', '寰宇向你致以亲切问候.')
                 customers = getbillcheckCustomers(code)
-                result = SendPushMessage(wxpybot, customers, msg)
-                wxpybot = None
-                return render(request, 'sb/pushclient.html',
-                {
-                    'title': '发送微信信息',                   
-                    
-                    'result' : result[1]
-                })
+                retry = 30
+                while retry > 0:
+                    if not wxpybot:
+                        time.sleep(1)
+                        retry -= 1
+                    else: 
+                        break
+                if not wxpybot: 
+                    return render(request, 'sb/pushclient.html',
+                    {
+                        'title': '发送微信信息',
+                        'errormsg': '微信登录超时, 请稍后重试. 请在获取二维码30秒内扫描登录.',
+                    })
+                else:
+                    result = SendPushMessage(wxpybot, customers, msg)
+                    #logger.info('result is {}'.format(result))
+                    wxpybot = None
+                    return render(request, 'sb/pushclient.html',
+                    {
+                        'title': '发送微信信息',                   
+                        
+                        'result' : result[1]
+                    })
         else:   
             wxpybot = None     
             return render(request, 'sb/pushclient.html',

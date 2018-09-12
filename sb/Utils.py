@@ -41,7 +41,7 @@ def SendPushMessage(bot, customers, message):
     
     result = OrderedDict()
     if not bot:
-        output = 'invalid bot object, return\n'
+        print('invalid bot object, return\n')
         return (False, result)
     
     #bot.enable_puid(path='hyhr_wxpy_puid.pkl')
