@@ -44,6 +44,12 @@
                             {{form.productName}} 
                             {%for field in form%}{% if field.name == 'productName' %}<label class="validation-summary-errors">{%for error in field.errors%}{{error}}{%endfor%}</label>{%endif%}{%endfor%}
                         </div>
+
+                        <label class="col-sm-2 control-label" for="productName">操作类型: </label>
+                        <div class="col-sm-2" >
+                            {{form.opName}} 
+                            {%for field in form%}{% if field.name == 'opName' %}<label class="validation-summary-errors">{%for error in field.errors%}{{error}}{%endfor%}</label>{%endif%}{%endfor%}
+                        </div>
                     </div>
                 </div>
     

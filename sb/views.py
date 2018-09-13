@@ -1120,19 +1120,21 @@ def sb_partnerbillcheck(request):
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
 def sb_operationquery(request):
     try:
-        if 'dateFrom' in request.GET or 'dateTo' in request.GET or 'productName' in request.GET:
+        if 'dateFrom' in request.GET or 'dateTo' in request.GET or 'productName' in request.GET or 'opName' in request.GET:
             dateFrom = request.GET.get('dateFrom', None)
             dateTo = request.GET.get('dateTo', None)
             prodName = request.GET.get('productName', 0) #all
+            opName = request.GET.get('opName', 0)
             pagecount = request.GET.get('page_count', settings.DEFAULT_PAGE_COUNT)
             pageid = request.GET.get('page_id', 1)
 
             opform = OperationQueryForm(
-                {
-                    'dateFrom': dateFrom.replace('/','-'),
-                    'dateTo':dateTo.replace('/','-'),
-                    'productName': prodName
-                }
+                # {
+                #     'dateFrom': dateFrom,
+                #     'dateTo':dateTo,
+                #     'productName': prodName
+                # }
+                request.GET
             )
             if opform.is_valid():
                 try:
@@ -1150,6 +1152,11 @@ def sb_operationquery(request):
                 except:
                     prodName  = 0
 
+                try:
+                    opName = int(opName)
+                except:
+                    opName  = 0
+
                 result = Operations.objects.exclude(operation=CustomerOperations.REORDER.value).order_by('customer__name','-id')
                 if dateFrom:
                     df = opform.cleaned_data['dateFrom']
@@ -1161,6 +1168,9 @@ def sb_operationquery(request):
                 
                 if prodName != 0:
                     result = result.filter(product__code=prodName)
+                
+                if opName != 0:
+                    result = result.filter(operation=opName)
                 
                 paginator = Paginator(result, pagecount)
                 try:

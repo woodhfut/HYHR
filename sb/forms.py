@@ -215,8 +215,8 @@ class QueryForm(forms.Form):
 
 
 class OperationQueryForm(forms.Form):
-    dateFrom = forms.DateTimeField(required=False,widget=AdminDateWidget(), label='开始时间')
-    dateTo = forms.DateTimeField(required=False,widget=AdminDateWidget(), label='截至时间')
+    dateFrom = forms.DateField(required=False,widget=AdminDateWidget(), label='开始时间')
+    dateTo = forms.DateField(required=False,widget=AdminDateWidget(), label='截至时间')
 
     PN_OPTIONS = (
         (0, '全部'),
@@ -226,6 +226,14 @@ class OperationQueryForm(forms.Form):
     )
     productName = forms.IntegerField(required = False,
                                 widget= forms.Select(choices=PN_OPTIONS))
+
+    OP_OPTIONS=(
+        (0, '全部'),
+        (1, '新增'),
+        (3, '减员'),
+    )
+    opName = forms.IntegerField(required = False, widget=forms.Select(choices=OP_OPTIONS))
+
 
     def clean_dateTo(self):
         cdf = self.cleaned_data.get('dateFrom',None)
