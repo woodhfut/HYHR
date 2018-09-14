@@ -33,15 +33,7 @@ def sb_index(request):
                       'message':'index',
                       'year': datetime.now().year
                   })
-'''
-def sb_subsb(request, id):
-    return render(request,'sb/index.html',
-                  {
-                      'title': 'sb',
-                      'message': id,
-                      'year': datetime.now().year
-                  })
-'''
+
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
 def sb_subsb(request, id):
     return render(request,'sb/sb_index.html',
@@ -889,6 +881,8 @@ def sb_pushclient(request, code):
                     })
             else:
                 msg = request.POST.get('message', '寰宇向你致以亲切问候.')
+                if msg == '':
+                    msg = '寰宇向你致以亲切问候.'
                 customers = getbillcheckCustomers(code)
                 retry = 30
                 while retry > 0:
@@ -1198,6 +1192,121 @@ def sb_operationquery(request):
             return render(request, 'sb/operationquery.html',
             {
                 'form': opform,
+            })
+    except Exception as ex:
+        return render(request, 'HYHR/error.html',
+        {
+            'errormessage': ex,
+            
+        })
+
+
+def wechatbroadcast(request):
+    try:
+        global wxpybot
+        if request.POST:           
+            if not wxpybot and 'getQR' in request.POST:
+                if settings.DEBUG:
+                    qrpath = os.path.join(settings.STATICFILES_DIRS[0], 'HYHR/img/QR.png')
+                else:
+                    qrpath = os.path.join(settings.STATIC_ROOT, 'HYHR/img/QR.png')
+                if os.path.exists(qrpath):
+                    try:
+                        os.remove(qrpath)
+                    except Exception as ex:
+                        logger.warn('Error while tried to remvoe existing QR.png. ex={}'.format(ex))
+                
+                #thread to check qr.png is downloaded
+                qrThread = threading.Thread(target=checkQR, args=(qrpath,))
+                qrThread.start()
+                
+                retry = 20
+                while retry > 0:
+                    if not os.path.exists(qrpath):
+                        time.sleep(1)
+                        retry-= 1
+                    else:
+                        break
+
+                if os.path.exists(qrpath):
+                    #customers = getbillcheckCustomers(code)
+                    return render(request, 'sb/wechatbroadcast.html',
+                    {
+                        'title': '发送微信信息',
+                        'QR': True,
+                        #'customers': customers
+                    })
+                else:
+                    logger.error('still doesnot get QR after 20 sec. ')
+                    
+                    return render(request, 'sb/wechatbroadcast.html',
+                    {
+                        'title': '发送微信信息',
+                        'errormsg': '没有获取到微信登陆二维码, 请稍后重试.',
+                    })
+            elif 'getFriends' in request.POST:
+                retry = 30
+                while retry > 0:
+                    if not wxpybot:
+                        time.sleep(1)
+                        retry -= 1
+                    else: 
+                        break
+                if not wxpybot: 
+                    return render(request, 'sb/wechatbroadcast.html',
+                    {
+                        'title': '发送微信信息',
+                        'errormsg': '微信登录超时, 请稍后重试. 请在获取二维码30秒内扫描登录.',
+                    })
+                else:
+                    friends = [f.name for f in wxpybot.friends()]
+                    return render(request, 'sb/wechatbroadcast.html',
+                        {
+                            'title': '发送微信信息',
+                            'Friends': friends,
+                        })
+            elif 'sendmsg' in request.POST:
+                msg = request.POST.get('message', '寰宇向你致以亲切问候.')
+                if msg == '':
+                    msg = '寰宇向你致以亲切问候.'
+                friends = request.POST.getlist('subcheckboxes')
+                retry = 30
+                while retry > 0:
+                    if not wxpybot:
+                        time.sleep(1)
+                        retry -= 1
+                    else: 
+                        break
+                if not wxpybot: 
+                    return render(request, 'sb/wechatbroadcast.html',
+                    {
+                        'title': '发送微信信息',
+                        'errormsg': '微信登录超时, 请稍后重试. 请在获取二维码30秒内扫描登录.',
+                    })
+                else:
+                    print('msg to send in view: {}'.format(msg))
+                    result = SendPushMessage(wxpybot, friends, msg)
+                    #logger.info('result is {}'.format(result))
+                    wxpybot = None
+                    return render(request, 'sb/wechatbroadcast.html',
+                    {
+                        'title': '发送微信信息',                   
+                        
+                        'result' : result[1]
+                    })
+            else:
+                return render(request, 'sb/wechatbroadcast.html',
+                    {
+                        'title': '发送微信信息',
+                        'errormsg': '发送状态错误，请稍后重试.',
+                    })
+        else:   
+            wxpybot = None     
+            return render(request, 'sb/wechatbroadcast.html',
+            {
+                'title': '发送微信信息',
+                'getQRCode': '1',
+                
             })
     except Exception as ex:
         return render(request, 'HYHR/error.html',

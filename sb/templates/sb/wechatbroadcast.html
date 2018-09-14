@@ -1,0 +1,138 @@
+{% extends 'HYHR/layout.html' %}
+
+{% block content %}
+<h2>{{title}}</h2>
+
+{% if getQRCode %}
+<form class="form-horizontal" role="form" method="POST">
+    {% csrf_token %}
+    
+    <div class="col-sm-10">
+        <button id="qrbtn" type="submit" class="btn btn-primary">获取微信登陆二维码</button>
+        <input type="hidden" id="getQR" name="getQR" />
+    </div>
+            
+</form>
+{% else %}
+    {% if QR %}
+        
+        <label class="col-sm-2 control-label">扫描以下二维码登录微信</label>
+        <br/>
+        {% load staticfiles %}
+        <img  style="width: 200px; height: 200px;" src="{% static 'HYHR/img/QR.png' %}" />
+        <form class="form-horizontal" role="form" method="POST">
+            {% csrf_token %}
+            <div class="col-sm-10">
+                <button id="qrbtn" type="submit" class="btn btn-primary">获取朋友列表</button>
+                <input type="hidden" id='getFriends' name="getFriends" />
+            </div>
+        </form>
+    {%else%}
+        {% if Friends %}
+            <form class="form-horizontal" role="form" method="POST">
+                {% csrf_token %}
+                <div class="col-sm-10">
+                    <label class="control-label">填写需要发送给客户的信息：</label>
+                </div>
+                <div class="col-sm-10">
+                    <textarea class="col-sm-10" name=message id=message rows="5" placeholder="寰宇向你致以亲切问候."></textarea>
+                </div>
+            
+                <div class="col-sm-10">
+                    <button id="qrbtn" type="submit" class="btn btn-primary">发送</button>
+                    <input type="hidden" name="sendmsg" />
+                </div>
+                {% if Friends %}
+                    <div class="col-sm-10">
+                            <label class="control-label">选择要发送消息的朋友：</label>
+                    </div>
+                    
+                    <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th><input type="checkbox" id="checkall" name="checkall"/>发送</th>
+                                        <th>姓名</th>
+                                        
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for f in Friends %}
+                                        <tr>
+                                            <td><input type="checkbox" name="subcheckboxes" value="{{f}}" class="subcheckbox"/></td>
+                                            <td>{{f}}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                {%endif%}
+            </form>
+        {% endif %}
+    {% endif %}
+{% endif %}
+
+{% if errormsg %}
+<div class="col-sm-10">
+    <label style="color: red"> {{errormsg}}</label>
+</div>
+{% endif %}
+
+{% if result %}
+<div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>姓名</th>
+                    <th>发送状态</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for k, v in result.items %}
+                <tr>
+                    <td>{{k}}</td>
+                    <td>{% if v == True %}<span class="glyphicon glyphicon-ok"></span>{%else%} <span class="glyphicon glyphicon-remove"></span>{%endif%}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+{% endif %}
+{% endblock %}
+
+
+{% block scripts%}
+
+<script type="text/javascript">
+
+    $('#checkall').click(function(event) {   
+        if(this.checked) {
+            // Iterate each checkbox
+            $(':checkbox').each(function() {
+                this.checked = true;                        
+            });
+        } else {
+            $(':checkbox').each(function() {
+                this.checked = false;                       
+            });
+        }
+    });
+    
+    $('.subcheckbox').click(function(event){
+        
+        if (this.checked){
+            
+            if ($('#checkall:checked').length==0){
+                if ($('.subcheckbox:checked').length == $('.subcheckbox').length)
+                {
+                    $('#checkall').prop('checked', true);
+                }
+            }
+        }
+        else
+        {   
+            if($('#checkall:checked').length ==1){
+                $('#checkall').prop('checked', false);
+            }
+        }
+    });
+</script>
+{% endblock %}

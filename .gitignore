@@ -3,3 +3,4 @@
 *.png
 static/HYHR/sa.csv
 *.csv
+*.pkl

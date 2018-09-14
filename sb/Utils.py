@@ -45,6 +45,7 @@ def SendPushMessage(bot, customers, message):
         return (False, result)
     
     #bot.enable_puid(path='hyhr_wxpy_puid.pkl')
+    print('msg to send {}'.format(message))
     failed = []
     for name in cNames:
         try:
@@ -54,8 +55,8 @@ def SendPushMessage(bot, customers, message):
             for friend in friends:
                 #print(friend.name)
                 if friend.nick_name == name or friend.name == name:
-                    friend.send(message.format(name))
-                    #output += '成功发消息给{}\n'.format(name)
+                    friend.send(message)
+                    #print('成功发消息给{},msg:{}\n'.format(name, message))
                     found = True
                     
                     break
