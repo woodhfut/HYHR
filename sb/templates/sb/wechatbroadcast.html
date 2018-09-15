@@ -4,11 +4,11 @@
 <h2>{{title}}</h2>
 
 {% if getQRCode %}
-<form class="form-horizontal" role="form" method="POST">
+<form class="form-horizontal" role="form" method="POST" id="getQRform">
     {% csrf_token %}
     
     <div class="col-sm-10">
-        <button id="qrbtn" type="submit" class="btn btn-primary">获取微信登陆二维码</button>
+        <button id="getQRbtn" type="button" class="btn btn-primary">获取微信登陆二维码</button>
         <input type="hidden" id="getQR" name="getQR" />
     </div>
             
@@ -20,16 +20,16 @@
         <br/>
         {% load staticfiles %}
         <img  style="width: 200px; height: 200px;" src="{% static 'HYHR/img/QR.png' %}" />
-        <form class="form-horizontal" role="form" method="POST">
+        <form class="form-horizontal" role="form" method="POST" id="getfrdsform">
             {% csrf_token %}
             <div class="col-sm-10">
-                <button id="qrbtn" type="submit" class="btn btn-primary">获取朋友列表</button>
+                <button id="getfrdsbtn" type="submit" class="btn btn-primary">获取朋友列表</button>
                 <input type="hidden" id='getFriends' name="getFriends" />
             </div>
         </form>
     {%else%}
         {% if Friends %}
-            <form class="form-horizontal" role="form" method="POST">
+            <form class="form-horizontal" role="form" method="POST" id="sendmsgform">
                 {% csrf_token %}
                 <div class="col-sm-10">
                     <label class="control-label">填写需要发送给客户的信息：</label>
@@ -39,7 +39,7 @@
                 </div>
             
                 <div class="col-sm-10">
-                    <button id="qrbtn" type="submit" class="btn btn-primary">发送</button>
+                    <button id="sendmsgbtn" type="submit" class="btn btn-primary">发送</button>
                     <input type="hidden" name="sendmsg" />
                 </div>
                 {% if Friends %}
@@ -96,12 +96,35 @@
             </tbody>
         </table>
 {% endif %}
+<link rel="stylesheet" type="text/css" href="{% static 'HYHR/css/loading.css'%}" />
+<div id="over" class="over"></div>
+<div id="layout" class="layout"><img src="{% static 'HYHR/img/loading.gif' %}" /></div>
 {% endblock %}
 
 
 {% block scripts%}
 
 <script type="text/javascript">
+    $('#getQRbtn').click(function(){
+       
+        $('#over').show();
+        $('#layout').show();
+        $('#getQRform').submit()
+    });
+
+    $('#getfrdsbtn').click(function(){
+       
+       $('#over').show();
+       $('#layout').show();
+       $('#getfrdsform').submit()
+   });
+
+       $('#sendmsgbtn').click(function(){
+       
+       $('#over').show();
+       $('#layout').show();
+       $('#sendmsgform').submit()
+   });
 
     $('#checkall').click(function(event) {   
         if(this.checked) {
