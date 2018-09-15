@@ -839,12 +839,13 @@ def checkQR(qrpath):
 def sb_pushclient(request, code):
     try:
         global wxpybot
+        vqrpath = 'HYHR/img/QR_{}.png'.format(request.user.username)
         if request.POST:           
             if not wxpybot and 'getQR' in request.POST:
                 if settings.DEBUG:
-                    qrpath = os.path.join(settings.STATICFILES_DIRS[0], 'HYHR/img/QR.png')
+                    qrpath = os.path.join(settings.STATICFILES_DIRS[0], vqrpath)
                 else:
-                    qrpath = os.path.join(settings.STATIC_ROOT, 'HYHR/img/QR.png')
+                    qrpath = os.path.join(settings.STATIC_ROOT, vqrpath)
                 if os.path.exists(qrpath):
                     try:
                         os.remove(qrpath)
@@ -868,7 +869,7 @@ def sb_pushclient(request, code):
                     return render(request, 'sb/pushclient.html',
                     {
                         'title': '发送微信信息',
-                        'QR': qrpath,
+                        'QR': vqrpath,
                         'customers': customers
                     })
                 else:
@@ -1204,12 +1205,13 @@ def sb_operationquery(request):
 def wechatbroadcast(request):
     try:
         global wxpybot
+        vqrpath = 'HYHR/img/QR_{}.png'.format(request.user.username)
         if request.POST:           
             if not wxpybot and 'getQR' in request.POST:
                 if settings.DEBUG:
-                    qrpath = os.path.join(settings.STATICFILES_DIRS[0], 'HYHR/img/QR.png')
+                    qrpath = os.path.join(settings.STATICFILES_DIRS[0], vqrpath)
                 else:
-                    qrpath = os.path.join(settings.STATIC_ROOT, 'HYHR/img/QR.png')
+                    qrpath = os.path.join(settings.STATIC_ROOT, vqrpath)
                 if os.path.exists(qrpath):
                     try:
                         os.remove(qrpath)
@@ -1233,7 +1235,7 @@ def wechatbroadcast(request):
                     return render(request, 'sb/wechatbroadcast.html',
                     {
                         'title': '发送微信信息',
-                        'QR': True,
+                        'QR': vqrpath,
                         #'customers': customers
                     })
                 else:
@@ -1256,7 +1258,7 @@ def wechatbroadcast(request):
                     return render(request, 'sb/wechatbroadcast.html',
                     {
                         'title': '发送微信信息',
-                        'errormsg': '微信登录超时, 请稍后重试. 请在获取二维码30秒内扫描登录.',
+                        'errormsg': '微信登录超时或已退出, 请稍后重试. 请在获取二维码30秒内扫描登录.',
                     })
                 else:
                     friends = [f.name for f in wxpybot.friends()]
