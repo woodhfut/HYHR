@@ -55,7 +55,7 @@ def export_query_csv_thread(request, rst_list, itemType):
             if itemType == 0: #Product order
                 writer.writerow(['姓名', '身份证号', '手机号', '业务名称','业务类型', '所在区县', '户口性质', '基数', '总价','开始日期', '截至日期', '下单日期', '状态'])
                 for rst in rst_list:               
-                    item = [rst.customer.name, rst.customer.pid, rst.customer.phone, rst.product.name, rst.orderType, rst.district, rst.customer.get_hukou_display(), rst.product_base, rst.total_price, rst.validFrom, rst.validTo, rst.orderDate, rst.customer.status]
+                    item = [rst.customer.name, rst.customer.pid, rst.customer.phone, rst.product.name, rst.orderType.name, rst.district.name, rst.customer.get_hukou_display(), rst.product_base, rst.total_price, rst.validFrom, rst.validTo, rst.orderDate, rst.customer.status]
                     writer.writerow(item)
             elif itemType == 1: #service order
                 writer.writerow(['姓名', '身份证号', '手机号', '业务名称', '户口性质', '总价','开始日期', '截至日期', '下单日期', '状态'])

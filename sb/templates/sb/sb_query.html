@@ -127,7 +127,7 @@
                         <td>{{rst.customer.pid}}</td>
                         <td>{{rst.customer.phone}}</td>
                         <td>{{rst.product.name}}</td>
-                        <td>{{rst.orderType}}</td>
+                        <td>{{rst.orderType.name}}</td>
                         <td>{{rst.district.name}}</td>
                         <td>{{rst.customer.get_hukou_display}}</td>
                         <td>{{rst.product_base}}</td>        
@@ -205,7 +205,7 @@
                         </span>
                      </td>
                      <td style="width:15%">
-                        <span >共 {{result.paginator.count}} 项</span> <a style="background-color: skyblue" class="btn btn-info" href="/sb/export/csv/query">导出到CSV</a>
+                        <span >共 {{result.paginator.count}} 项</span> <a class="btn btn-info" href="/sb/export/csv/query">导出到CSV</a>
                      </td>
                  </tr>
              </tbody>
