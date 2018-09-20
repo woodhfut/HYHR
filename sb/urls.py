@@ -20,4 +20,5 @@ urlpatterns = [
     url(r'^partnerbillcheck/$', views.sb_partnerbillcheck, name='sb_partnerbillcheck'),
     url(r'^operationquery/$', views.sb_operationquery, name='sb_operationquery'),
     url(r'^wechatbroadcast/$', views.wechatbroadcast, name='wechatbroadcast'),
+    url(r'^wechatbroadcast1/$', views.WechatBroadcastView.as_view(), name='wechatbroadcast1'),
 ]

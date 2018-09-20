@@ -11,16 +11,18 @@ from .models import Product_Order, Customer, Product, Service_Order, Partner, Or
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, SendPushMessage
 from calendar import monthrange
-from wxpy import *
+from wxpy import Bot
 import os
 from django.conf import settings
 from random import randint
 import threading
+import multiprocessing
 import time
 import csv
 from wsgiref.util import FileWrapper
 from django.db.models import Sum, F
 import uuid
+from django.views import View
 import logging
 logger = logging.getLogger(__name__)
 
@@ -1320,3 +1322,108 @@ def wechatbroadcast(request):
             'errormessage': ex,
             
         })
+import ctypes
+def checkQRSess(request, qrpath, uid):
+    try:
+        #Bot(cache_path = '{}.pkl'.format(uid) ,qr_path=qrpath)
+        request.session['wxpybot'] = 'abc'#id(Bot(cache_path = '{}.pkl'.format(uid) ,qr_path=qrpath))
+    except Exception as ex:
+        logger.warn('Error during create wxpybot. {}'.format(ex))
+
+class WechatBroadcastView(View):
+    def get(self, request, *args, **kwargs):
+        if request.session.get('wxpybot'):
+            wxpybot = ctypes.cast(request.session.get('wxpybot'), ctypes.py_object).value
+            friends = [f.name for f in wxpybot.friends()]
+            return render(request, 'sb/wechatbroadcast.html',
+                {
+                    'title': '发送微信信息',
+                    'Friends': friends,
+                })
+        else:
+            return render(request, 'sb/wechatbroadcast.html',
+            {
+                'title': '发送微信信息',
+                'getQRCode': '1',
+                
+            })
+
+    
+    def post(self, request, *args, **kwargs):
+        print(request.session.get('wxpybot','abcdefg'))
+        if request.session.get('wxpybot',None):
+            wxpybot = ctypes.cast(request.session.get('wxpybot'), ctypes.py_object).value
+            if 'getFriends' in request.POST:
+               
+                friends = [f.name for f in wxpybot.friends()]
+                return render(request, 'sb/wechatbroadcast.html',
+                    {
+                        'title': '发送微信信息',
+                        'Friends': friends,
+                    })
+            elif 'sendmsg' in request.POST:
+                msg = request.POST.get('message', '寰宇向你致以亲切问候.')
+                if msg == '':
+                    msg = '寰宇向你致以亲切问候.'
+                friends = request.POST.getlist('subcheckboxes')
+                result = SendPushMessage(wxpybot, friends, msg)
+                                       
+                return render(request, 'sb/wechatbroadcast.html',
+                {
+                    'title': '发送微信信息',                   
+                    
+                    'result' : result[1]
+                })
+            else:
+                return render(request, 'sb/wechatbroadcast.html',
+                    {
+                        'title': '发送微信信息',
+                        'errormsg': '发送状态错误，请稍后重试.',
+                    })
+        else:
+            if 'getQR' in request.POST:
+                uid = uuid.uuid4()
+                vqrpath = 'HYHR/img/QR_{}.png'.format(str(uid))
+                #print('QR path {}'.format(vqrpath))
+                if settings.DEBUG:
+                    qrpath = os.path.join(settings.STATICFILES_DIRS[0], vqrpath)
+                else:
+                    qrpath = os.path.join(settings.STATIC_ROOT, vqrpath)
+                
+                #thread to check qr.png is downloaded
+                #qrThread = threading.Thread(target=checkQRSess, args=(request, qrpath, uid)).start()
+                # qrpro = multiprocessing.Process(target=checkQRSess, args=(request, qrpath, uid))
+                # qrpro.start()
+
+                retry = 20
+                while retry > 0:
+                    if not os.path.exists(qrpath):
+                        time.sleep(1)
+                        retry-= 1
+                    else:
+                        break
+
+                if os.path.exists(qrpath):
+                    return render(request, 'sb/wechatbroadcast.html',
+                    {
+                        'title': '发送微信信息',
+                        'QR': vqrpath,
+                    })
+                else:
+                    logger.error('still doesnot get QR after 20 sec. ')
+                    # try:
+                    #     if qrpro.is_alive():
+                    #         qrpro.terminate()
+                    # except Exception as ex:
+                    #     logger.warn('Error occurred while exit qr process. {}'.format(ex))
+                    return render(request, 'sb/wechatbroadcast.html',
+                    {
+                        'title': '发送微信信息',
+                        'errormsg': '没有获取到微信登陆二维码, 请稍后重试.',
+                    })
+            else:
+                return render(request, 'sb/wechatbroadcast.html',
+                {
+                    'title': '发送微信信息',
+                    'errormsg': '发送状态错误，请稍后重试.',
+                })
