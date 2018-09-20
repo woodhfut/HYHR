@@ -20,6 +20,7 @@ import time
 import csv
 from wsgiref.util import FileWrapper
 from django.db.models import Sum, F
+import uuid
 import logging
 logger = logging.getLogger(__name__)
 
@@ -1205,9 +1206,11 @@ def sb_operationquery(request):
 def wechatbroadcast(request):
     try:
         global wxpybot
-        vqrpath = 'HYHR/img/QR_{}.png'.format(request.user.username)
+        
         if request.POST:           
             if not wxpybot and 'getQR' in request.POST:
+                vqrpath = 'HYHR/img/QR_{}.png'.format(str(uuid.uuid4()))
+                print('QR path {}'.format(vqrpath))
                 if settings.DEBUG:
                     qrpath = os.path.join(settings.STATICFILES_DIRS[0], vqrpath)
                 else:
