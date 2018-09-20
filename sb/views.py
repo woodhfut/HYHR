@@ -840,9 +840,10 @@ def checkQR(qrpath):
 def sb_pushclient(request, code):
     try:
         global wxpybot
-        vqrpath = 'HYHR/img/QR_{}.png'.format(request.user.username)
+        
         if request.POST:           
             if not wxpybot and 'getQR' in request.POST:
+                vqrpath = 'HYHR/img/QR_{}.png'.format(str(uuid.uuid4()))
                 if settings.DEBUG:
                     qrpath = os.path.join(settings.STATICFILES_DIRS[0], vqrpath)
                 else:
