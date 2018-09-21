@@ -1397,19 +1397,19 @@ class WechatBroadcastView(View):
         global WxpybotDict
         if 'getFriends' in request.POST or 'sendmsg' in request.POST:
             if not request.session.session_key in WxpybotDict:
-                retry = 30
+                retry = 60
                 while retry > 0:
                     if request.session.session_key in WxpybotDict:
                         break
                     retry-=1
                     time.sleep(1)
 
-                if not request.session.session_key in request.POST:
-                    logger.error('even after 30 sec, wechat is still not logged in. Error might happended, ask client to retry.')  
+                if not request.session.session_key in WxpybotDict:
+                    logger.error('even after 60 sec, wechat is still not logged in. Error might happended, ask client to retry.')  
                     return render(request, 'sb/wechatbroadcast.html',
                     {
                         'title': '发送微信信息',
-                        'errormsg': '获取微信登录信息超时.请在获取登录二维码后30秒内扫描登录. 如在手机上已确认登录，请刷新页面重试.',
+                        'errormsg': '获取微信登录信息超时.请在获取登录二维码后60秒内扫描登录. 如在手机上已确认登录，请刷新页面.',
                     })     
         if request.session.session_key in WxpybotDict:    
             wxpybot = WxpybotDict[request.session.session_key]       
@@ -1467,7 +1467,7 @@ class WechatBroadcastView(View):
                 # qrpro = multiprocessing.Process(target=checkQRSess, args=(request, qrpath, uid))
                 # qrpro.start()
 
-                retry = 30
+                retry = 60
                 while retry > 0:
                     if not os.path.exists(qrpath) and not request.session.session_key in WxpybotDict:
                         time.sleep(1)
@@ -1488,7 +1488,7 @@ class WechatBroadcastView(View):
                         'confirm': True,
                     })
                 else:
-                    logger.error('still doesnot get QR after 30 sec. ')
+                    logger.error('still doesnot get QR after 60 sec. ')
                     # try:
                     #     if qrpro.is_alive():
                     #         qrpro.terminate()
@@ -1497,7 +1497,7 @@ class WechatBroadcastView(View):
                     return render(request, 'sb/wechatbroadcast.html',
                     {
                         'title': '发送微信信息',
-                        'errormsg': '没有获取到微信登陆二维码, 请稍后重试.如在手机上已确认登录，请刷新页面重试.',
+                        'errormsg': '没有获取到微信登陆二维码, 请稍后重试.如在手机上已确认登录，请刷新页面.',
                     })
             else:
                 return render(request, 'sb/wechatbroadcast.html',

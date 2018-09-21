@@ -17,7 +17,12 @@
 {% if getQRCode %}
 <form class="form-horizontal" role="form" method="POST" id="getQRform">
     {% csrf_token %}
-    
+    <div class="col-sm-10">
+        <p style="color:skyblue">注意： <br>
+            1. 扫描二维码登录后，有时候微信登录会比较慢，请耐心等候。如果一分钟还没有登录成功，请刷新重试。<br/>
+            2. 由于微信对发送频率的限制，此处对发送速度做了限制。每发送一次消息后，随机等待0-3秒发送下一个消息,所以发送时间会比较长。<br/>
+            3. 由于微信对发送数量的限制，尽量一次不要发送超过100个好友， 否则可能导致部分好友发送失败。</p>
+    </div>
     <div class="col-sm-10">
         <button id="getQRbtn" type="button" class="btn btn-primary">获取微信登陆二维码</button>
         <input type="hidden" id="getQR" name="getQR" />
@@ -55,7 +60,7 @@
                 </div>
                 {% if Friends %}
                     <div class="col-sm-10">
-                            <label class="control-label">选择要发送消息的朋友：</label>
+                            <label class="control-label">选择要发送消息的朋友：(<span id="selectedCount">0</span>/{{Friends|length}})</label>
                     </div>
                     
                     <div class="table-responsive">
@@ -148,10 +153,12 @@
             $(':checkbox').each(function() {
                 this.checked = true;                        
             });
+            $('#selectedCount').text($('.subcheckbox:checked').length)
         } else {
             $(':checkbox').each(function() {
                 this.checked = false;                       
             });
+            $('#selectedCount').text(0)
         }
     });
     
@@ -172,6 +179,7 @@
                 $('#checkall').prop('checked', false);
             }
         }
+        $('#selectedCount').text($('.subcheckbox:checked').length)
     });
 </script>
 {% endblock %}
