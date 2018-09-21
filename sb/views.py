@@ -1393,11 +1393,20 @@ class WechatBroadcastView(View):
             if 'getFriends' in request.POST:
                
                 friends = [f.name for f in wxpybot.friends()]
-                return render(request, 'sb/wechatbroadcast.html',
-                {
-                    'title': '发送微信信息',
-                    'Friends': friends,
-                })
+                if len(friends):
+                    return render(request, 'sb/wechatbroadcast.html',
+                    {
+                        'title': '发送微信信息',
+                        'Friends': friends,
+                    })
+                else:#probably logout from phone already
+                    WxpybotDict.pop(request.session.session_key,None)
+                    return render(request, 'sb/wechatbroadcast.html',
+                    {
+                        'title': '发送微信信息',
+                        'getQRCode': '1',
+                        
+                    })
             elif 'sendmsg' in request.POST:
                 msg = request.POST.get('message', '寰宇向你致以亲切问候.')
                 if msg == '':
@@ -1435,8 +1444,6 @@ class WechatBroadcastView(View):
                 # qrpro = multiprocessing.Process(target=checkQRSess, args=(request, qrpath, uid))
                 # qrpro.start()
 
-                #here means don't need qr code, client just click confirm on the phone.
-
                 retry = 30
                 while retry > 0:
                     if not os.path.exists(qrpath) and not request.session.session_key in WxpybotDict:
@@ -1451,7 +1458,7 @@ class WechatBroadcastView(View):
                         'title': '发送微信信息',
                         'QR': vqrpath,
                     })
-                elif request.session.session_key in WxpybotDict:
+                elif request.session.session_key in WxpybotDict: #here means don't need qr code, client just click confirm on the phone.
                     return render(request, 'sb/wechatbroadcast.html',
                     {
                         'title': '发送微信信息',
