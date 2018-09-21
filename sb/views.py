@@ -1328,14 +1328,37 @@ lock = threading.Lock()
 
 def removeSessBot(sessid):
     with lock:
+        print('about to move {}'.format(sessid))
         WxpybotDict.pop(sessid, None)
+        cachefile = os.path.join(settings.WXPYCACHE_DIR, sessid+'.pkl')
+        if os.path.exists(cachefile):
+            print('sess pkl path exists at ' + cachefile)
+            try:
+                os.remove(cachefile)
+            except Exception as ex:
+                logger.warn('error while delete sess pkl file.{} '.format(ex))
+        else:
+            cachefile = os.path.join(settings.BASE_DIR, sessid+'.pkl')
+            if os.path.exists(cachefile):
+                print('sess pkl path exists at ' + cachefile )
+                try:
+                    os.remove(cachefile)
+                except Exception as ex:
+                    logger.warn('error while delete sess pkl file.{} '.format(ex))
 
 def checkQRSess(request, qrpath, sessid):
     try:
-        bot = Bot(cache_path = '{}.pkl'.format(sessid) ,qr_path=qrpath)
+        cachepath = settings.WXPYCACHE_DIR
+        if not os.path.exists(cachepath):
+            try:
+                os.mkdir(cachepath)
+            except:
+                cachepath = settings.BASE_DIR
+        cachefile = os.path.join(cachepath, '{}.pkl'.format(sessid))
+        bot = Bot(cache_path = cachefile ,qr_path=qrpath)
         with lock:
             WxpybotDict[sessid] = bot
-        threading.Timer(10*60, removeSessBot, args=(sessid,))
+        threading.Timer(settings.WXPYSTATUS_DURATION, removeSessBot, args=(sessid,)).start()
         
     except Exception as ex:
         logger.warn('Error during create wxpybot. {}'.format(ex))

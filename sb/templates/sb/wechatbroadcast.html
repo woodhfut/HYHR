@@ -50,7 +50,7 @@
                 </div>
             
                 <div class="col-sm-10">
-                    <button id="sendmsgbtn" type="submit" class="btn btn-primary">发送</button>
+                    <button id="sendmsgbtn" type="button" class="btn btn-primary">发送</button>
                     <input type="hidden" name="sendmsg" />
                 </div>
                 {% if Friends %}
@@ -131,10 +131,15 @@
    });
 
        $('#sendmsgbtn').click(function(){
-       
-       $('#over').show();
-       $('#layout').show();
-       $('#sendmsgform').submit()
+        if ($('.subcheckbox:checked').length ==0){
+            alert('没选要发送消息的朋友.')
+        }
+        else
+        {
+            $('#over').show();
+            $('#layout').show();
+            $('#sendmsgform').submit()
+        }
    });
 
     $('#checkall').click(function(event) {   

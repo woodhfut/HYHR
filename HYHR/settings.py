@@ -201,3 +201,7 @@ STATICFILES_DIRS = (os.path.join(BASE_DIR,'static') ,)
 LOGIN_REDIRECT_URL = '/'
 
 DEFAULT_PAGE_COUNT = 15
+
+WXPYCACHE_DIR = os.path.join(BASE_DIR, 'wxpycache')
+
+WXPYSTATUS_DURATION = 10*60 #10 minutes
