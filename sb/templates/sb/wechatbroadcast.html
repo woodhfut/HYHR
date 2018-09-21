@@ -3,6 +3,17 @@
 {% block content %}
 <h2>{{title}}</h2>
 
+{% if confirm %}
+<form class="form-horizontal" role="form" method="POST" id="getfrdsform">
+    {% csrf_token %}
+    <div class="col-sm-10">
+
+        <button id="getfrdsbtn" type="submit" class="btn btn-primary">获取朋友列表</button>
+        <input type="hidden" id='getFriends' name="getFriends" />
+    </div>
+</form>
+{% endif %}
+
 {% if getQRCode %}
 <form class="form-horizontal" role="form" method="POST" id="getQRform">
     {% csrf_token %}

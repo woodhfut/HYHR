@@ -11,16 +11,18 @@ from .models import Product_Order, Customer, Product, Service_Order, Partner, Or
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, SendPushMessage
 from calendar import monthrange
-from wxpy import *
+from wxpy import Bot
 import os
 from django.conf import settings
 from random import randint
 import threading
+import multiprocessing
 import time
 import csv
 from wsgiref.util import FileWrapper
 from django.db.models import Sum, F
 import uuid
+from django.views import View
 import logging
 logger = logging.getLogger(__name__)
 
@@ -1320,3 +1322,156 @@ def wechatbroadcast(request):
             'errormessage': ex,
             
         })
+
+WxpybotDict ={}
+lock = threading.Lock()
+
+def removeSessBot(sessid):
+    with lock:
+        WxpybotDict.pop(sessid, None)
+
+def checkQRSess(request, qrpath, sessid):
+    try:
+        bot = Bot(cache_path = '{}.pkl'.format(sessid) ,qr_path=qrpath)
+        with lock:
+            WxpybotDict[sessid] = bot
+        threading.Timer(10*60, removeSessBot, args=(sessid,))
+        
+    except Exception as ex:
+        logger.warn('Error during create wxpybot. {}'.format(ex))
+
+class WechatBroadcastView(View):
+    def get(self, request, *args, **kwargs):
+        global WxpybotDict
+        if request.session.session_key in WxpybotDict:
+            wxpybot = WxpybotDict[request.session.session_key]
+            print(wxpybot)
+            friends = [f.name for f in wxpybot.friends()]
+            if len(friends):
+                return render(request, 'sb/wechatbroadcast.html',
+                {
+                    'title': '发送微信信息',
+                    'Friends': friends,
+                })
+            else:#probably logout from phone already
+                WxpybotDict.pop(request.session.session_key,None)
+                return render(request, 'sb/wechatbroadcast.html',
+                {
+                    'title': '发送微信信息',
+                    'getQRCode': '1',
+                    
+                })
+        else:
+            return render(request, 'sb/wechatbroadcast.html',
+            {
+                'title': '发送微信信息',
+                'getQRCode': '1',
+                
+            })
+
+    
+    def post(self, request, *args, **kwargs):
+        global WxpybotDict
+        if 'getFriends' in request.POST or 'sendmsg' in request.POST:
+            if not request.session.session_key in WxpybotDict:
+                retry = 30
+                while retry > 0:
+                    if request.session.session_key in WxpybotDict:
+                        break
+                    retry-=1
+                    time.sleep(1)
+
+                if not request.session.session_key in request.POST:
+                    logger.error('even after 30 sec, wechat is still not logged in. Error might happended, ask client to retry.')  
+                    return render(request, 'sb/wechatbroadcast.html',
+                    {
+                        'title': '发送微信信息',
+                        'errormsg': '获取微信登录信息超时.请在获取登录二维码后30秒内扫描登录. 如在手机上已确认登录，请刷新页面重试.',
+                    })     
+        if request.session.session_key in WxpybotDict:    
+            wxpybot = WxpybotDict[request.session.session_key]       
+            if 'getFriends' in request.POST:
+               
+                friends = [f.name for f in wxpybot.friends()]
+                return render(request, 'sb/wechatbroadcast.html',
+                {
+                    'title': '发送微信信息',
+                    'Friends': friends,
+                })
+            elif 'sendmsg' in request.POST:
+                msg = request.POST.get('message', '寰宇向你致以亲切问候.')
+                if msg == '':
+                    msg = '寰宇向你致以亲切问候.'
+                friends = request.POST.getlist('subcheckboxes')
+                result = SendPushMessage(wxpybot, friends, msg)
+                                       
+                return render(request, 'sb/wechatbroadcast.html',
+                {
+                    'title': '发送微信信息',                   
+                    
+                    'result' : result[1]
+                })
+            else:
+                return render(request, 'sb/wechatbroadcast.html',
+                    {
+                        'title': '发送微信信息',
+                        'errormsg': '发送状态错误，请稍后重试.',
+                    })
+        else:
+            if 'getQR' in request.POST:
+                if not request.session.session_key:
+                    request.session.save()
+                print(request.session.session_key) 
+                #WxpybotDict.pop(request.session.session_key,None)   
+                vqrpath = 'HYHR/img/QR_{}.png'.format(request.session.session_key)
+                #print('QR path {}'.format(vqrpath))
+                if settings.DEBUG:
+                    qrpath = os.path.join(settings.STATICFILES_DIRS[0], vqrpath)
+                else:
+                    qrpath = os.path.join(settings.STATIC_ROOT, vqrpath)
+                
+                #thread to check qr.png is downloaded
+                qrThread = threading.Thread(target=checkQRSess, args=(request, qrpath,request.session.session_key)).start()
+                # qrpro = multiprocessing.Process(target=checkQRSess, args=(request, qrpath, uid))
+                # qrpro.start()
+
+                #here means don't need qr code, client just click confirm on the phone.
+
+                retry = 30
+                while retry > 0:
+                    if not os.path.exists(qrpath) and not request.session.session_key in WxpybotDict:
+                        time.sleep(1)
+                        retry-= 1
+                    else:
+                        break
+
+                if os.path.exists(qrpath):
+                    return render(request, 'sb/wechatbroadcast.html',
+                    {
+                        'title': '发送微信信息',
+                        'QR': vqrpath,
+                    })
+                elif request.session.session_key in WxpybotDict:
+                    return render(request, 'sb/wechatbroadcast.html',
+                    {
+                        'title': '发送微信信息',
+                        'confirm': True,
+                    })
+                else:
+                    logger.error('still doesnot get QR after 30 sec. ')
+                    # try:
+                    #     if qrpro.is_alive():
+                    #         qrpro.terminate()
+                    # except Exception as ex:
+                    #     logger.warn('Error occurred while exit qr process. {}'.format(ex))
+                    return render(request, 'sb/wechatbroadcast.html',
+                    {
+                        'title': '发送微信信息',
+                        'errormsg': '没有获取到微信登陆二维码, 请稍后重试.如在手机上已确认登录，请刷新页面重试.',
+                    })
+            else:
+                return render(request, 'sb/wechatbroadcast.html',
+                {
+                    'title': '发送微信信息',
+                    'errormsg': '发送状态错误，请稍后重试.',
+                })
