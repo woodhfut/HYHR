@@ -1,0 +1,59 @@
+{% extends 'HYHR/layout.html' %}
+
+{% block content %}
+<h2>发送微信信息</h2>
+<div id='maindiv'>
+<div class="col-sm-10">
+        <p style="color:skyblue">注意： <br>
+            1. 扫描二维码登录后，有时候微信登录会比较慢，请耐心等候。如果一分钟还没有登录成功，请刷新重试。<br/>
+            2. 由于微信对发送频率的限制，此处对发送速度做了限制。每发送一次消息后，随机等待0-3秒发送下一个消息,所以发送时间会比较长。<br/>
+            3. 由于微信对发送数量的限制，尽量一次不要发送超过100个好友， 否则可能导致部分好友发送失败。</p>
+    </div>
+    <div id='getQRDiv' class="col-sm-10">
+        <button id="getQRbtn" type="button" class="btn btn-primary">获取微信登陆二维码</button>
+        
+    </div>
+    <div id="QRDiv" class="col-sm-10" hidden>
+        <label class="col-sm-2 control-label">扫描以下二维码登录微信</label>
+        <br/>
+        {% load staticfiles %}
+        <img id="QRimg" style="width:200px; height:200px;" src="" />
+    </div>
+</div>
+
+{%endblock%}
+
+{% block scripts%}
+<script>
+$(document).ready(function(){
+    $("#getQRbtn").click(function(){
+        var ws_scheme = window.location.protocol == "https"? "wss": "ws";
+        var ws_path = ws_scheme + "://" + window.location.host + "/ws/sb/wechat/";
+        console.log('connecting to ' + ws_path);
+        var wsock = new WebSocket(ws_path);
+
+        wsock.onopen = function(e){
+            wsock.send(JSON.stringify({
+                'command': 'GETQR',
+                
+            }));
+        }
+        wsock.onmessage = function(e){
+            var data = JSON.parse(e.data);
+            cmd = data['command'];
+            if (cmd == 'GETQR')
+            {
+                var qrpath = data['message'];
+                $("#getQRDiv").remove();
+                $("#QRDiv").show();
+                $("#QRimg").attr({src: "{% static '' %}/" + qrpath});
+            }
+        }
+    });
+
+
+});
+
+</script>
+
+{%endblock%}

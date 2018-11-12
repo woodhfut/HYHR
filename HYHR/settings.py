@@ -108,6 +108,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'sb',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -205,3 +206,14 @@ DEFAULT_PAGE_COUNT = 15
 WXPYCACHE_DIR = os.path.join(BASE_DIR, 'wxpycache')
 
 WXPYSTATUS_DURATION = 10*60 #10 minutes
+
+ASGI_APPLICATION = 'HYHR.routing.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [('127.0.0.1', 6379)],
+        }
+    }
+}

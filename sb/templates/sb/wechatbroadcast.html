@@ -69,7 +69,7 @@
                                     <tr>
                                         <th><input type="checkbox" id="checkall" name="checkall"/>发送</th>
                                         <th>姓名</th>
-                                        
+                                        <th>发送状态</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -77,6 +77,7 @@
                                         <tr>
                                             <td><input type="checkbox" name="subcheckboxes" value="{{f}}" class="subcheckbox"/></td>
                                             <td>{{f}}</td>
+                                            <td><span id='sendStatus'></span></td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
@@ -111,6 +112,7 @@
                 {% endfor %}
             </tbody>
         </table>
+</div>
 {% endif %}
 <link rel="stylesheet" type="text/css" href="{% static 'HYHR/css/loading.css'%}" />
 <div id="over" class="over"></div>

@@ -1345,7 +1345,7 @@ class WechatBroadcastView(View):
                     qrpath = os.path.join(settings.STATIC_ROOT, vqrpath)
                 
                 #thread to check qr.png is downloaded
-                qrThread = threading.Thread(target=checkQRSess, args=(request, qrpath,request.session.session_key)).start()
+                threading.Thread(target=checkQRSess, args=(request, qrpath,request.session.session_key)).start()
                 # qrpro = multiprocessing.Process(target=checkQRSess, args=(request, qrpath, uid))
                 # qrpro.start()
 
@@ -1387,3 +1387,7 @@ class WechatBroadcastView(View):
                     'title': '发送微信信息',
                     'errormsg': '发送状态错误，请稍后重试.',
                 })
+
+
+def wechatbroadcast_ws(request):
+    return render(request, 'sb/wechatbroadcast_ws.html',{})

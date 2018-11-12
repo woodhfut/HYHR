@@ -7,6 +7,8 @@ from io import StringIO
 import time
 from random import randint
 from collections import OrderedDict
+from django.conf import settings
+import os
 
 @unique
 class ProductCode(Enum):
@@ -29,7 +31,16 @@ class CustomerOperations(Enum):
     REORDER =2
     REMOVE = 3
 
- 
+def GetWXBot(qrpath, sesskey):
+    cachepath = settings.WXPYCACHE_DIR
+    if not os.path.exists(cachepath):
+        try:
+            os.mkdir(cachepath)
+        except:
+            cachepath = settings.BASE_DIR
+    cachefile = os.path.join(cachepath, '{}.pkl'.format(sesskey))
+    bot = Bot(cache_path = cachefile ,qr_path=qrpath)
+    return bot
 
 
 def SendPushMessage(bot, customers, message):
