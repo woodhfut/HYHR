@@ -9,6 +9,8 @@ from random import randint
 from collections import OrderedDict
 from django.conf import settings
 import os
+import platform
+
 
 @unique
 class ProductCode(Enum):
@@ -31,13 +33,37 @@ class CustomerOperations(Enum):
     REORDER =2
     REMOVE = 3
 
-def GetWXBot(qrpath, sesskey):
+def getWXCachePath(sesskey):
+    return os.path.join(settings.WXPYCACHE_DIR, '{}.pkl'.format(sesskey))
+
+def isWXCacheExists(sesskey):    
+    return os.path.exists(getWXCachePath(sesskey))
+
+def getWXCacheMtime(sesskey):
+    mtime = None
+    if isWXCacheExists(sesskey):
+        mtime = os.path.getmtime(getWXCachePath(sesskey))
+        print('mtime : {}'.format(mtime))
+    return mtime
+
+def isWXCacheExpired(sesskey):
+    mtime = getWXCacheMtime(sesskey)
+    return not mtime or time.time() - mtime > settings.WXPYSTATUS_DURATION
+
+def handleExpiredWXCache(sesskey):
+    if isWXCacheExpired(sesskey): 
+        try:
+            os.remove(settings.WXPYCACHE_DIR)
+        except Exception as ex:
+            print('Error occurred while deleting cache file {}.pkl, ex={}. '.format(sesskey, ex))
+
+def getWXBot(qrpath, sesskey):
     cachepath = settings.WXPYCACHE_DIR
     if not os.path.exists(cachepath):
         try:
             os.mkdir(cachepath)
         except:
-            cachepath = settings.BASE_DIR
+            raise
     cachefile = os.path.join(cachepath, '{}.pkl'.format(sesskey))
     bot = Bot(cache_path = cachefile ,qr_path=qrpath)
     return bot

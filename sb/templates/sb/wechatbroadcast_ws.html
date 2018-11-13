@@ -9,15 +9,47 @@
             2. 由于微信对发送频率的限制，此处对发送速度做了限制。每发送一次消息后，随机等待0-3秒发送下一个消息,所以发送时间会比较长。<br/>
             3. 由于微信对发送数量的限制，尽量一次不要发送超过100个好友， 否则可能导致部分好友发送失败。</p>
     </div>
+    <div id='errordiv' class="col-sm-12">
+        <p style="color:red"></p>
+    </div>
     <div id='getQRDiv' class="col-sm-10">
         <button id="getQRbtn" type="button" class="btn btn-primary">获取微信登陆二维码</button>
         
     </div>
-    <div id="QRDiv" class="col-sm-10" hidden>
-        <label class="col-sm-2 control-label">扫描以下二维码登录微信</label>
+    <div id="QRDiv" class="col-sm-12" hidden>
+        <label class="col-sm-4 control-label">扫描以下二维码登录微信</label>
         <br/>
         {% load staticfiles %}
         <img id="QRimg" style="width:200px; height:200px;" src="" />
+    </div>
+    <div id="FriendsDiv" class="col-sm-10" hidden>
+        <div class="col-sm-10">
+            <label class="control-label">填写需要发送给客户的信息：</label>
+        </div>
+        <div class="col-sm-10">
+            <textarea class="col-sm-10" name=message id=message rows="5" placeholder="寰宇向你致以亲切问候."></textarea>
+        </div>
+    
+        <div class="col-sm-10">
+            <button id="sendmsgbtn" type="button" class="btn btn-primary">发送</button>
+        </div>
+        <div class="col-sm-10">
+            <label class="control-label">选择要发送消息的朋友：(<span id="selectedCount">0</span>/<span id="friendscount"></span>)</label>
+        </div>
+        
+        <div class="table-responsive">
+                <table class="table table-hover" id="friendsTable">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="checkall" name="checkall"/>发送</th>
+                            <th>姓名</th>
+                            <th>发送状态</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+        </div>
     </div>
 </div>
 
@@ -43,10 +75,28 @@ $(document).ready(function(){
             cmd = data['command'];
             if (cmd == 'GETQR')
             {
+                console.log('received GETQR command.')
                 var qrpath = data['message'];
                 $("#getQRDiv").remove();
                 $("#QRDiv").show();
-                $("#QRimg").attr({src: "{% static '' %}/" + qrpath});
+                $("#QRimg").attr({src: "{% static '' %}" + qrpath});
+            }
+            else if (cmd == 'GETFRIENDS')
+            {
+                var friends = data['message']
+                $("#getQRDiv").remove();
+                $("#QRDiv").remove();
+                $("#FriendsDiv").show();
+                $("#friendscount").text(friends.length)
+                for (f in friends)
+                {
+                    $("#friendsTable").find('tbody:last').append('<tr><td><input type="checkbox" name="subcheckboxes" value= "' + friends[f] + '" class="subcheckbox" /></td><td>' + friends[f] + '</td><td><span id="sendStatus"></span></td></tr>')
+                }
+            }
+            else if (cmd =='ERROR')
+            {
+                var msg = data['message'];
+                $("#errordiv p").text('Error Ocurred! \n' + msg);
             }
         }
     });
