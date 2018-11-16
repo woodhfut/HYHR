@@ -2,7 +2,7 @@ from channels.generic.websocket import WebsocketConsumer, AsyncWebsocketConsumer
 import json
 from wxpy import Bot
 from django.conf import settings
-from . import Utils
+from . import Utils, killableThread
 import os
 import threading
 import asyncio
@@ -35,8 +35,10 @@ class WebchatBroadcastConsumer(AsyncWebsocketConsumer):
                 #if Utils.isWXCacheExpired(sesskey):
                     #Utils.handleExpiredWXCache(sesskey)
 
-                    pool = ThreadPool(processes=1)
-                    rst = pool.apply_async(Utils.getWXBot, (qrpath, sesskey))
+                    # pool = ThreadPool(processes=1)
+                    # rst = pool.apply_async(Utils.getWXBot, (qrpath, sesskey))
+                    t = killableThread.ThreadWithExc(target=Utils.getWXBot, args=(qrpath, sesskey))
+                    t.start()
                     counter = 30
                     while counter >0:
                         if os.path.exists(qrpath):
@@ -57,11 +59,13 @@ class WebchatBroadcastConsumer(AsyncWebsocketConsumer):
                             'message': 'Couldnot get QR code in 30 sec, refresh to try again.',
                         }))
                         self.close(code='NO_QR')
+                        t.raiseExc(killableThread.KillaboutThreadException)
                         return
                     else:
                         print('wait client to scan the QR to create wxbot object.')
                         counter = 60
-                        while not rst.ready() and counter > 0:
+                        while not t.ready() and counter > 0:
+                            print('not ready, sleep 1 sec')
                             await asyncio.sleep(1)
                             counter -=1
                         
@@ -72,9 +76,11 @@ class WebchatBroadcastConsumer(AsyncWebsocketConsumer):
                                 'message': 'You should scan the QR to login in 60 sec, refresh to try again.',
                             })) 
                             self.close(code='TIMEOUT')
+                            t.raiseExc(killableThread.KillaboutThreadException)
                             return
                         else:
-                            self._wxbot = rst.get()
+                            self._wxbot = t.get()
+                            print(self._wxbot)
                             friends = [f.name for f in self._wxbot.friends()]
                             await self.send(json.dumps({
                                 'command': 'GETFRIENDS',
