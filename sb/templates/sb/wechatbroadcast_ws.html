@@ -58,47 +58,100 @@
 {% block scripts%}
 <script>
 $(document).ready(function(){
-    $("#getQRbtn").click(function(){
-        var ws_scheme = window.location.protocol == "https"? "wss": "ws";
-        var ws_path = ws_scheme + "://" + window.location.host + "/ws/sb/wechat/";
-        console.log('connecting to ' + ws_path);
-        var wsock = new WebSocket(ws_path);
+    $("#checkall").click(function(){
+        if(this.checked) {
+            // Iterate each checkbox
+            $(':checkbox').each(function() {
+                this.checked = true;                        
+            });
+            $('#selectedCount').text($('.subcheckbox:checked').length)
+        } else {
+            $(':checkbox').each(function() {
+                this.checked = false;                       
+            });
+            $('#selectedCount').text(0)
+        }
+    })
+    
+    var ws_scheme = window.location.protocol == "https"? "wss": "ws";
+    var ws_path = ws_scheme + "://" + window.location.host + "/ws/sb/wechat/";
+    console.log('connecting to ' + ws_path);
+    var wsock = new WebSocket(ws_path);
 
-        wsock.onopen = function(e){
+    wsock.onmessage = function(e){
+        var data = JSON.parse(e.data);
+        cmd = data['command'];
+        if (cmd == 'GETQR')
+        {
+            console.log('received GETQR command.')
+            var qrpath = data['message'];
+            $("#getQRDiv").remove();
+            $("#QRDiv").show();
+            $("#QRimg").attr({src: "{% static '' %}" + qrpath});
+        }
+        else if (cmd == 'GETFRIENDS')
+        {
+            var friends = data['message']
+            $("#getQRDiv").remove();
+            $("#QRDiv").remove();
+            $("#FriendsDiv").show();
+            $("#friendscount").text(friends.length)
+            for (f in friends)
+            {
+                $("#friendsTable").find('tbody:last').append('<tr><td><input type="checkbox" name="subcheckboxes" value= "' + friends[f] + '" class="subcheckbox" /></td><td>' + friends[f] + '</td><td><span id="sendStatus"></span></td></tr>')
+            }
+            $('.subcheckbox').click(function(event){
+    
+                if (this.checked){
+                    
+                    if ($('#checkall:checked').length==0){
+                        if ($('.subcheckbox:checked').length == $('.subcheckbox').length)
+                        {
+                            $('#checkall').prop('checked', true);
+                        }
+                    }
+                }
+                else
+                {   
+                    if($('#checkall:checked').length ==1){
+                        $('#checkall').prop('checked', false);
+                    }
+                }
+                $('#selectedCount').text($('.subcheckbox:checked').length)
+            });
+        }
+        else if (cmd =='ERROR')
+        {
+            var msg = data['message'];
+            $("#errordiv p").text('Error Ocurred! \n' + msg);
+        }
+    }
+
+
+
+    $("#sendmsgbtn").click(function(){
+        var msg = $("#message").val();
+        var lst = [];
+        var chks = $(".subcheckbox:checked");
+        for (var i=0; i< chks.length; i++){
+            lst.push($(chks[i]).val());
+        }
+        wsock.send(JSON.stringify({
+            'command': 'SENDMSG',
+            'message': msg,
+            'friends': lst
+        }))
+    })
+
+    $("#getQRbtn").click(function(){
+
+        //wsock.onopen = function(e){
             wsock.send(JSON.stringify({
                 'command': 'GETQR',
                 
             }));
-        }
-        wsock.onmessage = function(e){
-            var data = JSON.parse(e.data);
-            cmd = data['command'];
-            if (cmd == 'GETQR')
-            {
-                console.log('received GETQR command.')
-                var qrpath = data['message'];
-                $("#getQRDiv").remove();
-                $("#QRDiv").show();
-                $("#QRimg").attr({src: "{% static '' %}" + qrpath});
-            }
-            else if (cmd == 'GETFRIENDS')
-            {
-                var friends = data['message']
-                $("#getQRDiv").remove();
-                $("#QRDiv").remove();
-                $("#FriendsDiv").show();
-                $("#friendscount").text(friends.length)
-                for (f in friends)
-                {
-                    $("#friendsTable").find('tbody:last').append('<tr><td><input type="checkbox" name="subcheckboxes" value= "' + friends[f] + '" class="subcheckbox" /></td><td>' + friends[f] + '</td><td><span id="sendStatus"></span></td></tr>')
-                }
-            }
-            else if (cmd =='ERROR')
-            {
-                var msg = data['message'];
-                $("#errordiv p").text('Error Ocurred! \n' + msg);
-            }
-        }
+        //}
+        
     });
 
 

@@ -30,6 +30,11 @@ class WebchatBroadcastConsumer(AsyncWebsocketConsumer):
                 else:
                     qrpath = os.path.join(settings.STATIC_ROOT, vqrpath)
                 print(qrpath)
+                if os.path.exists(qrpath):
+                    try:
+                        os.remove(qrpath)
+                    except:
+                        pass
                 #check wxpy cache file
                 if not Utils.isWXCacheExists(sesskey):
                 #if Utils.isWXCacheExpired(sesskey):
@@ -65,7 +70,7 @@ class WebchatBroadcastConsumer(AsyncWebsocketConsumer):
                         print('wait client to scan the QR to create wxbot object.')
                         counter = 60
                         while not t.ready() and counter > 0:
-                            print('not ready, sleep 1 sec')
+                            #print('not ready, sleep 1 sec')
                             await asyncio.sleep(1)
                             counter -=1
                         
@@ -93,8 +98,15 @@ class WebchatBroadcastConsumer(AsyncWebsocketConsumer):
                             'command': 'GETFRIENDS',
                             'message': friends,
                         }))
-            elif cmd == 'GETFRIENDS': 
-                pass
+            elif cmd == 'SENDMSG': 
+                msg = text_data_json.get('message', 'Message from HYHR.')
+                print('got msg ' + msg)
+                friends = text_data_json.get('friends', None)
+                if friends:
+                    for f in friends:
+                        print('got friend ' + f)
+                else:
+                    print('no friends.')
                 
         else:
             pass
