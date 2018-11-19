@@ -205,7 +205,7 @@ DEFAULT_PAGE_COUNT = 15
 
 WXPYCACHE_DIR = os.path.join(BASE_DIR, 'wxpycache')
 
-WXPYSTATUS_DURATION = 10*60 #10 minutes
+WXPYSTATUS_DURATION = 30*60 #30 minutes timeout for wxpy cache.
 
 ASGI_APPLICATION = 'HYHR.routing.application'
 

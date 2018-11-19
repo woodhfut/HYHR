@@ -73,17 +73,17 @@ class WebchatBroadcastConsumer(AsyncWebsocketConsumer):
                         return
                     else:
                         print('wait client to scan the QR to create wxbot object.')
-                        counter = 60
+                        counter = 120
                         while not t.ready() and counter > 0:
                             #print('not ready, sleep 1 sec')
                             await asyncio.sleep(1)
                             counter -=1
                         
                         if counter == 0:
-                            #even after 60 sec, client still doesn't scan the QR to login, exit. 
+                            #even after 120 sec, client still doesn't scan the QR to login, exit. 
                             await self.send(json.dumps({
                                 'command': 'ERROR',
-                                'message': 'You should scan the QR to login in 60 sec, refresh to try again.',
+                                'message': 'You should scan the QR to login in 120 sec, refresh to try again.',
                             })) 
                             self.close(code='TIMEOUT')
                             t.raiseExc(killableThread.KillaboutThreadException)
@@ -138,5 +138,7 @@ class WebchatBroadcastConsumer(AsyncWebsocketConsumer):
                             }))    
                         #logger.warn('Sending message to {} failed.'.format(name))           
                     asyncio.sleep(randint(0,3))               
+            else:
+                print("unkonwn command. ignore it.")
         else:
-            pass
+            print("no command sent, ignore it.")

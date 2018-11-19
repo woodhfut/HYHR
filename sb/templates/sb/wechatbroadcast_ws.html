@@ -52,7 +52,9 @@
         </div>
     </div>
 </div>
-
+<link rel="stylesheet" type="text/css" href="{% static 'HYHR/css/loading.css'%}" />
+<div id="over" class="over"></div>
+<div id="layout" class="layout"><img src="{% static 'HYHR/img/loading.gif' %}" /></div>
 {%endblock%}
 
 {% block scripts%}
@@ -100,9 +102,14 @@ $(document).ready(function(){
             $("#getQRDiv").remove();
             $("#QRDiv").show();
             $("#QRimg").attr({src: "{% static '' %}" + qrpath});
+
+            $('#over').hide();
+            $('#layout').hide();
         }
         else if (cmd == 'GETFRIENDS')
         {
+            $('#over').hide();
+            $('#layout').hide();
             var friends = data['message']
             $("#getQRDiv").remove();
             $("#QRDiv").remove();
@@ -110,7 +117,7 @@ $(document).ready(function(){
             $("#friendscount").text(friends.length)
             for (f in friends)
             {
-                $("#friendsTable").find('tbody:last').append('<tr><td><input type="checkbox" name="subcheckboxes" value= "' + friends[f] + '" class="subcheckbox" /></td><td>' + friends[f] + '</td><td><span id="sendStatus" name="sendStatus" value="' + friends[f] + '"></span></td></tr>')
+                $("#friendsTable").find('tbody:last').append('<tr><td><input type="checkbox" name="subcheckboxes" value= "' + friends[f] + '" class="subcheckbox" /></td><td>' + friends[f] + '</td><td><span id="sendStatus" name="sendStatus" value="' + friends[f] + '"></span></td></tr>');
             }
             $('.subcheckbox').click(function(event){
     
@@ -128,12 +135,18 @@ $(document).ready(function(){
                     if($('#checkall:checked').length ==1){
                         $('#checkall').prop('checked', false);
                     }
+
+                    //remove send status
+                    var corspan = $("#sendStatus[value='" + $(this).val() + "']");
+                    corspan.removeClass();
                 }
                 $('#selectedCount').text($('.subcheckbox:checked').length)
             });
         }
         else if (cmd =='SENDSTATUS')
         {
+            $('#over').hide();
+            $('#layout').hide();
             var result = data['message'];
             var statusspan = $("#sendStatus[value='" + result[0] + "']");
             if (result[1] == true)
@@ -155,7 +168,11 @@ $(document).ready(function(){
 
 
     $("#sendmsgbtn").click(function(){
+        //remove send status before new round of sending
         $("[name='sendStatus']").removeClass();
+
+        $('#over').show();
+        $('#layout').show();
 
         var msg = $("#message").val();
         var lst = [];
@@ -171,7 +188,8 @@ $(document).ready(function(){
     })
 
     $("#getQRbtn").click(function(){
-
+        $('#over').show();
+        $('#layout').show();
         //wsock.onopen = function(e){
             wsock.send(JSON.stringify({
                 'command': 'GETQR',
