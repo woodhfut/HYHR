@@ -207,6 +207,8 @@ WXPYCACHE_DIR = os.path.join(BASE_DIR, 'wxpycache')
 
 WXPYSTATUS_DURATION = 30*60 #30 minutes timeout for wxpy cache.
 
+WXPY_IMG_EXTENSIONS =['jpg', 'png']
+
 ASGI_APPLICATION = 'HYHR.routing.application'
 
 CHANNEL_LAYERS = {

@@ -22,13 +22,16 @@
         {% load staticfiles %}
         <img id="QRimg" style="width:200px; height:200px;" src="" />
     </div>
-    <div id="FriendsDiv" class="col-sm-10" hidden>
-        <div class="col-sm-10">
+    <div id="FriendsDiv" class="col-sm-12" hidden>
+        <div class="col-sm-12">
             <label class="control-label">填写需要发送给客户的信息：</label>
         </div>
-        <div class="col-sm-10">
-            <textarea class="col-sm-10" name=message id=message rows="5" placeholder="寰宇向你致以亲切问候."></textarea>
+        <div class="col-sm-12" id="messageDiv">
+            <textarea class="col-sm-6" name=message id=message rows="5" placeholder="寰宇向你致以亲切问候."></textarea>
+            <input type="file" id="filemsg" />
+            <span id="messageDiv" style="color:skyblue"></span>
         </div>
+
     
         <div class="col-sm-10">
             <button id="sendmsgbtn" type="button" class="btn btn-primary">发送</button>
@@ -171,8 +174,51 @@ $(document).ready(function(){
         //remove send status before new round of sending
         $("[name='sendStatus']").removeClass();
 
-        $('#over').show();
-        $('#layout').show();
+        // $('#over').show();
+        // $('#layout').show();
+
+        var file = document.getElementById('filemsg').files[0];
+        if (file)
+        {
+            //Send file name to backend first. 
+            wsock.send(JSON.stringify({
+                'command': 'UPLOADFILE',
+                'message': file.name,
+            }));
+
+            console.log('we have a file to send: ' + file.name + ':' + file.size )
+            var chunksize = 4*1024*1024;
+            var reader = new FileReader();
+            var rawData = new ArrayBuffer();
+            var end = file.size < chunksize? file.size: chunksize;
+            var slice = file.slice(0, end);
+            reader.onload = function(e){
+                rawData = e.target.result;
+                wsock.send(rawData);
+            }
+            reader.readAsArrayBuffer(slice);
+            //$("#messageDiv").append('<span id="uploadProgress" style="color:skyblue">' + (end*100/file.size).toFixed(2) +'% (' + end + '/' + file.size + ') bytes uploaded. </span><br>');
+            while (end < file.size)
+            {
+                if (file.size - end >chunksize)
+                {
+                    slice = file.slice(end, end+chunksize);
+                    end += chunksize;
+                }
+                else
+                {
+                    slice = file.slice(end, file.size);
+                    end = file.size;
+                }
+                reader.readAsArrayBuffer(slice);
+                $("#messageDiv span#uploadProgress").text((end*100/file.size).toFixed(2) +'% (' + end + '/' + file.size + ') bytes uploaded.');
+            } 
+
+            wsock.send(JSON.stringify({
+                'command': 'UPLOADFILE',
+                'message': 'DONE'
+            }));
+        }
 
         var msg = $("#message").val();
         var lst = [];
@@ -185,6 +231,7 @@ $(document).ready(function(){
             'message': msg,
             'friends': lst
         }));
+
     })
 
     $("#getQRbtn").click(function(){
