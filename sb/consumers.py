@@ -7,6 +7,11 @@ import os
 import threading
 import asyncio
 from multiprocessing.pool import ThreadPool
+from random import randint
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class WebchatBroadcastConsumer(AsyncWebsocketConsumer):
 
@@ -36,9 +41,9 @@ class WebchatBroadcastConsumer(AsyncWebsocketConsumer):
                     except:
                         pass
                 #check wxpy cache file
-                if not Utils.isWXCacheExists(sesskey):
-                #if Utils.isWXCacheExpired(sesskey):
-                    #Utils.handleExpiredWXCache(sesskey)
+                #if not Utils.isWXCacheExists(sesskey):
+                if Utils.isWXCacheExpired(sesskey):
+                    Utils.handleExpiredWXCache(sesskey)
 
                     # pool = ThreadPool(processes=1)
                     # rst = pool.apply_async(Utils.getWXBot, (qrpath, sesskey))
@@ -99,14 +104,39 @@ class WebchatBroadcastConsumer(AsyncWebsocketConsumer):
                             'message': friends,
                         }))
             elif cmd == 'SENDMSG': 
-                msg = text_data_json.get('message', 'Message from HYHR.')
+                msg = text_data_json.get('message', '寰宇向你致以亲切问候.')
                 print('got msg ' + msg)
-                friends = text_data_json.get('friends', None)
-                if friends:
-                    for f in friends:
-                        print('got friend ' + f)
-                else:
-                    print('no friends.')
+                if msg == '':
+                    msg = '寰宇向你致以亲切问候.'
+
+                frds = text_data_json.get('friends', None)
                 
+                for name in frds:
+                    try:
+                        friends = self._wxbot.friends().search(name)
+                        found = False
+                        for friend in friends:
+                            if friend.name == name:
+                                found = True
+                                friend.send(msg)
+                                await self.send(json.dumps({
+                                    'command' : 'SENDSTATUS',
+                                    'message': (name, True),
+                                }))
+                                #logger.info('Sending message to {} successfully.'.format(name))
+                                break
+                        if not found:
+                            await self.send(json.dumps({
+                                'command': 'SENDSTATUS',
+                                'message': (name, False),
+                            }))    
+                            #logger.warn('Sending message to {} failed.'.format(name))           
+                    except:
+                        await self.send(json.dumps({
+                                'command': 'SENDSTATUS',
+                                'message': (name, False),
+                            }))    
+                        #logger.warn('Sending message to {} failed.'.format(name))           
+                    asyncio.sleep(randint(0,3))               
         else:
             pass

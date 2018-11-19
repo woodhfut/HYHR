@@ -53,7 +53,7 @@ def isWXCacheExpired(sesskey):
 def handleExpiredWXCache(sesskey):
     if isWXCacheExpired(sesskey): 
         try:
-            os.remove(settings.WXPYCACHE_DIR)
+            os.remove(getWXCachePath(sesskey))
         except Exception as ex:
             print('Error occurred while deleting cache file {}.pkl, ex={}. '.format(sesskey, ex))
 
