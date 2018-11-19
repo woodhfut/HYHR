@@ -192,13 +192,15 @@ $(document).ready(function(){
             var rawData = new ArrayBuffer();
             var end = file.size < chunksize? file.size: chunksize;
             var slice = file.slice(0, end);
+            var readnext = false;
             reader.onload = function(e){
                 rawData = e.target.result;
                 wsock.send(rawData);
+                readnext = true
             }
             reader.readAsArrayBuffer(slice);
             //$("#messageDiv").append('<span id="uploadProgress" style="color:skyblue">' + (end*100/file.size).toFixed(2) +'% (' + end + '/' + file.size + ') bytes uploaded. </span><br>');
-            while (end < file.size)
+            while (end < file.size && readnext)
             {
                 if (file.size - end >chunksize)
                 {
@@ -211,6 +213,7 @@ $(document).ready(function(){
                     end = file.size;
                 }
                 reader.readAsArrayBuffer(slice);
+                readnext = false;
                 $("#messageDiv span#uploadProgress").text((end*100/file.size).toFixed(2) +'% (' + end + '/' + file.size + ') bytes uploaded.');
             } 
 

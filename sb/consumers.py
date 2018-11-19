@@ -113,7 +113,7 @@ class WebchatBroadcastConsumer(AsyncWebsocketConsumer):
                             }))
                 elif cmd == 'SENDMSG': 
                     msg = text_data_json.get('message', '寰宇向你致以亲切问候.')
-                    print('got msg ' + msg)
+                    print('got msg:' + msg)
                     if msg == '':
                         msg = '寰宇向你致以亲切问候.'
 
@@ -163,6 +163,7 @@ class WebchatBroadcastConsumer(AsyncWebsocketConsumer):
                         self._uploaded = True
                     else:
                         self._filename = msg
+                        print('file name : ' + msg)
 
                 else:
                     print("unkonwn command. ignore it.")
