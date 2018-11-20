@@ -129,7 +129,7 @@ class WebchatBroadcastConsumer(AsyncWebsocketConsumer):
                                     friend.send(msg)
 
                                     print(' {}, {}'.format( self._filename, self._fullfilename))
-                                    if self._filename and self._fullfilename:
+                                    if self._filename and self._fullfilename and os.path.getsize(self._fullfilename) <1024*1024: #currenlty file bigger than 1MB is not supported.
                                         extindex =self._filename.rfind('.')
                                         if extindex != -1:
                                             ext = self._filename[extindex+1:]
