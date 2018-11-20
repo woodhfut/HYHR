@@ -7,7 +7,8 @@
         <p style="color:skyblue">注意： <br>
             1. 扫描二维码登录后，有时候微信登录会比较慢，请耐心等候。如果一分钟还没有登录成功，请刷新重试。<br/>
             2. 由于微信对发送频率的限制，此处对发送速度做了限制。每发送一次消息后，随机等待0-3秒发送下一个消息,所以发送时间会比较长。<br/>
-            3. 由于微信对发送数量的限制，尽量一次不要发送超过100个好友， 否则可能导致部分好友发送失败。</p>
+            3. 如果选择发送文件或者图片，不要尝试发送超过1MB大小的文件或者图片，wxpy会返回错误。
+        </p>
     </div>
     <div id='errordiv' class="col-sm-12">
         <p style="color:red"></p>
@@ -215,46 +216,50 @@ $(document).ready(function(){
             };
 
     $("#sendmsgbtn").click(function(){
-        //remove send status before new round of sending
-        $("[name='sendStatus']").removeClass();
-
-        // $('#over').show();
-        // $('#layout').show();
-
-        file = document.getElementById('filemsg').files[0];
-        if (file)
-        {
-            //Send file name to backend first. 
-            wsock.send(JSON.stringify({
-                'command': 'UPLOADFILE',
-                'filename': file.name,
-                'filesize': file.size
-            }));
-
-            console.log('we have a file to send: ' + file.name + ':' + file.size )
-            
-            end = file.size < chunksize? file.size: chunksize;
-            slice = file.slice(0, end);
-            
-            
-            reader.readAsArrayBuffer(slice);
-            $("#messageDiv span#messagespan").text((end*100/file.size).toFixed(2) +'% (' + end + '/' + file.size + ') bytes uploaded.');
+        if($(".subcheckbox:checked").length == 0){
+            alert('at least select one friend to send message.')
         }
         else{
-            var msg = $("#message").val();
-            var lst = [];
-            var chks = $(".subcheckbox:checked");
-            for (var i=0; i< chks.length; i++){
-                lst.push($(chks[i]).val());
-            }
-            wsock.send(JSON.stringify({
-                'command': 'SENDMSG',
-                'message': msg,
-                'friends': lst
-            }));
-        }
+            //remove send status before new round of sending
+            $("[name='sendStatus']").removeClass();
 
-        
+            // $('#over').show();
+            // $('#layout').show();
+
+            file = document.getElementById('filemsg').files[0];
+            if (file)
+            {
+                //Send file name to backend first. 
+                wsock.send(JSON.stringify({
+                    'command': 'UPLOADFILE',
+                    'filename': file.name,
+                    'filesize': file.size
+                }));
+
+                console.log('we have a file to send: ' + file.name + ':' + file.size )
+                
+                end = file.size < chunksize? file.size: chunksize;
+                slice = file.slice(0, end);
+                
+                
+                reader.readAsArrayBuffer(slice);
+                $("#messageDiv span#messagespan").text((end*100/file.size).toFixed(2) +'% (' + end + '/' + file.size + ') bytes uploaded.');
+            }
+            else{
+                var msg = $("#message").val();
+                var lst = [];
+                var chks = $(".subcheckbox:checked");
+                for (var i=0; i< chks.length; i++){
+                    lst.push($(chks[i]).val());
+                }
+                wsock.send(JSON.stringify({
+                    'command': 'SENDMSG',
+                    'message': msg,
+                    'friends': lst
+                }));
+            }
+
+        }
 
     })
 
