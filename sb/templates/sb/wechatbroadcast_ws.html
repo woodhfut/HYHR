@@ -29,7 +29,7 @@
         <div class="col-sm-12" id="messageDiv">
             <textarea class="col-sm-6" name=message id=message rows="5" placeholder="寰宇向你致以亲切问候."></textarea>
             <input type="file" id="filemsg" />
-            <span id="messageDiv" style="color:skyblue"></span>
+            <span id="messagespan" style="color:skyblue"></span>
         </div>
 
     
@@ -161,6 +161,41 @@ $(document).ready(function(){
                 statusspan.addClass("glyphicon glyphicon-remove");
             }
         }
+        else if (cmd == 'UPLOADSTATUS'){
+            var status = data['message'];
+            console.log('receive msg ' + status)
+            if (status =='READNEXT')
+            {
+                if(end == file.size){
+                    return;
+                }
+                if (file.size - end > chunksize){
+                    slice = file.slice(end, end+ chunksize);
+                    end += chunksize;
+                }
+                else{
+                    slice = file.slice(end, file.size);
+                    end = file.size;
+                }
+                reader.readAsArrayBuffer(slice);
+                $("#messageDiv span#messagespan").text((end*100/file.size).toFixed(2) +'% (' + end + '/' + file.size + ') bytes uploaded.');
+            }
+            else if (status == 'UPLOADDONE'){
+                console.log('all uploaded.')
+                var msg = $("#message").val();
+                var lst = [];
+                var chks = $(".subcheckbox:checked");
+                for (var i=0; i< chks.length; i++){
+                    lst.push($(chks[i]).val());
+                }
+                wsock.send(JSON.stringify({
+                    'command': 'SENDMSG',
+                    'message': msg,
+                    'friends': lst
+                }));
+            }
+
+        }
         else if (cmd =='ERROR')
         {
             var msg = data['message'];
@@ -168,7 +203,16 @@ $(document).ready(function(){
         }
     }
 
-
+    var file = null;
+    var chunksize = 4*1024*1024;
+    var reader = new FileReader();
+    var rawData = new ArrayBuffer();
+    var end = 0;
+    var slice = null;
+    reader.onload = function(e){
+                rawData = e.target.result;
+                wsock.send(rawData);
+            };
 
     $("#sendmsgbtn").click(function(){
         //remove send status before new round of sending
@@ -177,63 +221,40 @@ $(document).ready(function(){
         // $('#over').show();
         // $('#layout').show();
 
-        var file = document.getElementById('filemsg').files[0];
+        file = document.getElementById('filemsg').files[0];
         if (file)
         {
             //Send file name to backend first. 
             wsock.send(JSON.stringify({
                 'command': 'UPLOADFILE',
-                'message': file.name,
+                'filename': file.name,
+                'filesize': file.size
             }));
 
             console.log('we have a file to send: ' + file.name + ':' + file.size )
-            var chunksize = 4*1024*1024;
-            var reader = new FileReader();
-            var rawData = new ArrayBuffer();
-            var end = file.size < chunksize? file.size: chunksize;
-            var slice = file.slice(0, end);
-            var readnext = false;
-            reader.onload = function(e){
-                rawData = e.target.result;
-                wsock.send(rawData);
-                readnext = true
-            }
+            
+            end = file.size < chunksize? file.size: chunksize;
+            slice = file.slice(0, end);
+            
+            
             reader.readAsArrayBuffer(slice);
-            //$("#messageDiv").append('<span id="uploadProgress" style="color:skyblue">' + (end*100/file.size).toFixed(2) +'% (' + end + '/' + file.size + ') bytes uploaded. </span><br>');
-            while (end < file.size && readnext)
-            {
-                if (file.size - end >chunksize)
-                {
-                    slice = file.slice(end, end+chunksize);
-                    end += chunksize;
-                }
-                else
-                {
-                    slice = file.slice(end, file.size);
-                    end = file.size;
-                }
-                reader.readAsArrayBuffer(slice);
-                readnext = false;
-                $("#messageDiv span#uploadProgress").text((end*100/file.size).toFixed(2) +'% (' + end + '/' + file.size + ') bytes uploaded.');
-            } 
-
+            $("#messageDiv span#messagespan").text((end*100/file.size).toFixed(2) +'% (' + end + '/' + file.size + ') bytes uploaded.');
+        }
+        else{
+            var msg = $("#message").val();
+            var lst = [];
+            var chks = $(".subcheckbox:checked");
+            for (var i=0; i< chks.length; i++){
+                lst.push($(chks[i]).val());
+            }
             wsock.send(JSON.stringify({
-                'command': 'UPLOADFILE',
-                'message': 'DONE'
+                'command': 'SENDMSG',
+                'message': msg,
+                'friends': lst
             }));
         }
 
-        var msg = $("#message").val();
-        var lst = [];
-        var chks = $(".subcheckbox:checked");
-        for (var i=0; i< chks.length; i++){
-            lst.push($(chks[i]).val());
-        }
-        wsock.send(JSON.stringify({
-            'command': 'SENDMSG',
-            'message': msg,
-            'friends': lst
-        }));
+        
 
     })
 

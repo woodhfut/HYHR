@@ -19,7 +19,7 @@ class WebchatBroadcastConsumer(AsyncWebsocketConsumer):
         super().__init__(*args, **kwargs)
         self._filename = None
         self._fullfilename = None
-        self._uploaded = False
+        self._filesize = 0
         self._wxbot = None
 
     async def connect(self):
@@ -127,22 +127,27 @@ class WebchatBroadcastConsumer(AsyncWebsocketConsumer):
                                 if friend.name == name:
                                     found = True
                                     friend.send(msg)
+
+                                    print(' {}, {}'.format( self._filename, self._fullfilename))
+                                    if self._filename and self._fullfilename:
+                                        extindex =self._filename.rfind('.')
+                                        if extindex != -1:
+                                            ext = self._filename[extindex+1:]
+                                            if ext.lower() in settings.WXPY_IMG_EXTENSIONS:
+                                                #img file uploaded.
+                                                print('send as img')
+                                                friend.send_image(self._fullfilename)
+                                            else:
+                                                print('send as file.')
+                                                friend.send_file(self._fullfilename)
+                                        else:
+                                            friend.send_file(self._fullfilename)
+                                            print('send as file1.')
+                                    
                                     await self.send(json.dumps({
                                         'command' : 'SENDSTATUS',
                                         'message': (name, True),
                                     }))
-                                    if self._uploaded and self._filename and self._fullfilename:
-                                        extindex =self._filename.rfind('.')
-                                        if extindex != -1:
-                                            ext = self._filename[extindex:]
-                                            if ext.lower() in settings.WXPY_IMG_EXTENSIONS:
-                                                #img file uploaded.
-                                                friend.send_img(self._fullfilename)
-                                            else:
-                                                friend.send_file(self._fullfilename)
-                                        else:
-                                            friend.send_file(self._fullfilename)
-                                    #logger.info('Sending message to {} successfully.'.format(name))
                                     break
                             if not found:
                                 await self.send(json.dumps({
@@ -150,31 +155,56 @@ class WebchatBroadcastConsumer(AsyncWebsocketConsumer):
                                     'message': (name, False),
                                 }))    
                                 #logger.warn('Sending message to {} failed.'.format(name))           
-                        except:
+                        except Exception as ex:
                             await self.send(json.dumps({
                                     'command': 'SENDSTATUS',
                                     'message': (name, False),
                                 }))    
-                            #logger.warn('Sending message to {} failed.'.format(name))           
-                        asyncio.sleep(randint(0,3))      
+                            print('got exception {}'.format(ex))
+                        asyncio.sleep(randint(0,3))    
+
+                    #clean the file  
+                    try:
+                        os.remove(self._fullfilename)
+                        self._filename = None
+                        self._fullfilename = None
+                    except:
+                        pass
                 elif(cmd == 'UPLOADFILE'):
-                    msg = text_data_json.get('message',None)
-                    if msg == 'DONE':
-                        self._uploaded = True
+                    filename = text_data_json.get('filename',None)
+                    filesize = text_data_json.get('filesize', 0)
+                    self._filename = filename
+                    self._filesize = filesize
+                    print('file name :{}, filesize: {} '.format(filename, filesize))
+                    filepath = 'HYHR/img/{}{}'.format(self.scope['session']._get_session_key(),self._filename)
+                    if settings.DEBUG:
+                        self._fullfilename = os.path.join(settings.STATICFILES_DIRS[0], filepath)
                     else:
-                        self._filename = msg
-                        print('file name : ' + msg)
+                        self._fullfilename = os.path.join(settings.STATIC_ROOT, filepath)
+                    print('fullfilename: ' + self._fullfilename)
+                    if os.path.exists(self._fullfilename):
+                        try:
+                            os.remove(self._fullfilename)
+                        except:
+                            pass
 
                 else:
                     print("unkonwn command. ignore it.")
             else:
                 print("no command sent, ignore it.")
         if bytes_data:
-            if self._filename:
-                filepath = 'HYHR/img/{}'.format(self._filename)
-                if settings.DEBUG:
-                    self._fullfilename = os.path.join(settings.STATICFILES_DIRS[0], filepath)
-                else:
-                    self._fullfilename = os.path.join(settings.STATIC_ROOT, filepath)
+            if self._fullfilename:
                 with open(self._fullfilename, 'ab') as f:
                     f.write(bytes_data)
+                print(os.path.getsize(self._fullfilename))
+                if os.path.getsize(self._fullfilename) == self._filesize:
+                    await self.send(json.dumps({
+                        'command': 'UPLOADSTATUS',
+                        'message': 'UPLOADDONE',
+                    }))
+                else:
+                    await self.send(json.dumps({
+                        'command': 'UPLOADSTATUS',
+                        'message': 'READNEXT',
+                    }))
+                
