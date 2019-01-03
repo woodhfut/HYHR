@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }} - 寰宇</title>
     {% load staticfiles %}
+    <script src="{% static 'HYHR/scripts/jquery-1.10.2.min.js' %}"></script>
+    <script src="{% static 'HYHR/scripts/bootstrap.min.js' %}"></script>
+    <script src="{% static 'HYHR/scripts/respond.min.js' %}"></script>
     <link rel="stylesheet" type="text/css" href="{% static 'HYHR/content/bootstrap.min.css' %}" />
     <link rel="stylesheet" type="text/css" href="{% static 'HYHR/content/site.css' %}" />
     <link rel="stylesheet" type="text/css" href="/static/admin/css/base.css" /> 
@@ -14,6 +17,18 @@
     
     <link rel="icon" href="{% static 'HYHR/img/favicon.ico' %}" mce_href="{% static 'HYHR/img/favicon.ico' %}" type="image/x-icon">
     <link rel="shortcut icon" href="{% static 'HYHR/img/favicon.ico' %}" mce_href="{% static 'HYHR/img/favicon.ico' %}" type="image/x-icon">
+    
+    
+    <link href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css" rel="stylesheet" type="text/css" />
+
+
+
+
+    <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
+    
+    <link href="{% static 'HYHR/css/MonthPicker.min.css' %}" rel="stylesheet" type="text/css" />
+    <script src="{% static 'HYHR/scripts/MonthPicker.min.js' %}" ></script>
+    
 
 <style type="text/css">
         .navbar a{
@@ -118,9 +133,7 @@
         </footer>
     </div>
 
-    <script src="{% static 'HYHR/scripts/jquery-1.10.2.js' %}"></script>
-    <script src="{% static 'HYHR/scripts/bootstrap.js' %}"></script>
-    <script src="{% static 'HYHR/scripts/respond.js' %}"></script>
+
 {% block scripts %}{% endblock %}
 
 </body>
