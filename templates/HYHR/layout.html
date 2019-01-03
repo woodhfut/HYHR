@@ -20,15 +20,26 @@
     
     
     <link href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css" rel="stylesheet" type="text/css" />
-
-
-
-
     <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
     
     <link href="{% static 'HYHR/css/MonthPicker.min.css' %}" rel="stylesheet" type="text/css" />
     <script src="{% static 'HYHR/scripts/MonthPicker.min.js' %}" ></script>
-    
+    <script>
+        $.MonthPicker.i18n = {      
+            year: '年',
+            prevYear: '上一年',
+            nextYear: '下一年',
+            next12Years: '往前12年',
+            prev12Years: '往后12年',
+            nextLabel: '向后',
+            prevLabel: '向前',
+            buttonText: '选择月份',
+            jumpYears: '选择年份',
+            backTo: '返回',
+            months: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']
+        
+    };
+    </script>
 
 <style type="text/css">
         .navbar a{
