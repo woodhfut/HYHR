@@ -34,7 +34,7 @@ def sb_index(request):
                   {
                       'title': 'sb',
                       'message':'index',
-                      'year': datetime.now().year
+                      
                   })
 
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
@@ -43,7 +43,7 @@ def sb_subsb(request, id):
                   {
                       'title': 'sb',
                       'message': id,
-                      'year': datetime.now().year
+                      
                   })
 
 def export_query_csv_thread(request, rst_list, itemType):
@@ -176,7 +176,7 @@ def sb_query(request):
                                 'result': rst,
                                 'form':form,
                                 'itemType': str(itemType),
-                                'year': datetime.now().year
+                                
                             })
             else:
                 return render(request,'sb/sb_query.html',
@@ -185,7 +185,7 @@ def sb_query(request):
                             'pagecount': pagecount,
                             'collapse': collapse,
                             'form':form,
-                            'year': datetime.now().year
+                            
                         })
         else:
             return render(request,'sb/sb_query.html',
@@ -194,7 +194,7 @@ def sb_query(request):
                             'pagecount': 15,
                             'collapse':1,
                             'form':form,
-                            'year': datetime.now().year
+                            
                         })
     except Exception as ex:
         logger.error('exception in export thread. {}'.format(ex))
