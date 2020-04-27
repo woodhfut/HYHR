@@ -15,6 +15,7 @@ class User_extra_info(models.Model):
 
     class Meta:
         verbose_name = '补充用户信息'
+        verbose_name_plural = verbose_name
 
 class Partner(models.Model):
     name = models.CharField(max_length = 30)
@@ -27,6 +28,7 @@ class Partner(models.Model):
 
     class Meta:
         verbose_name = '合作伙伴'
+        verbose_name_plural = verbose_name
 
 # class CustomerStatus(models.Model):
 #     name = models.CharField(max_length = 20)
@@ -55,6 +57,7 @@ class Customer(models.Model):
     
     class Meta:
         verbose_name ='客户'
+        verbose_name_plural = verbose_name
 
 class Product(models.Model):
     name = models.CharField(max_length = 30)
@@ -69,6 +72,7 @@ class Product(models.Model):
     
     class Meta:
         verbose_name = '产品'
+        verbose_name_plural = verbose_name
 
 
 class PayMethod(models.Model):
@@ -79,6 +83,7 @@ class PayMethod(models.Model):
 
     class Meta:
         verbose_name = '支付方法'
+        verbose_name_plural = verbose_name
 
 class Service_Order(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
@@ -101,6 +106,7 @@ class Service_Order(models.Model):
 
     class Meta:
         verbose_name = '服务费订单'
+        verbose_name_plural = verbose_name
 
 class OrderType(models.Model):
     name = models.CharField(max_length=20)
@@ -109,6 +115,7 @@ class OrderType(models.Model):
 
     class Meta:
         verbose_name = '订单类型'
+        verbose_name_plural = verbose_name
 
 class District(models.Model):
     name = models.CharField(max_length = 50)
@@ -117,6 +124,7 @@ class District(models.Model):
 
     class Meta:
         verbose_name = '所属区县'
+        verbose_name_plural = verbose_name
 
 class Product_Order(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
@@ -159,6 +167,7 @@ class Product_Order(models.Model):
 
     class Meta:
         verbose_name = '产品订单'
+        verbose_name_plural = verbose_name
 
 class Operations(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
@@ -177,6 +186,7 @@ class Operations(models.Model):
 
     class Meta:
         verbose_name = '操作'
+        verbose_name_plural = verbose_name
 
 
 class TodoList(models.Model):
@@ -188,3 +198,4 @@ class TodoList(models.Model):
     
     class Meta:
         verbose_name ='待办事宜'
+        verbose_name_plural = verbose_name

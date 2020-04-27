@@ -53,7 +53,7 @@ def export_query_csv_thread(request, rst_list, itemType):
         filename = request.user.username + '_query.csv'
         request.session['result_file_query'] = filename
     try:
-        with open(os.path.join(settings.STATICFILES_DIRS[0],'HYHR/{}'.format(filename)), 'w', encoding='gb2312') as f:
+        with open(os.path.join(settings.STATICFILES_DIRS[0],'HYHR/{}'.format(filename)), 'w', encoding='utf-8-sig') as f:
             writer = csv.writer(f) 
             if itemType == 0: #Product order
                 writer.writerow(['姓名', '身份证号', '手机号', '业务名称','业务类型', '所在区县', '户口性质', '基数', '总价','开始日期', '截至日期', '下单日期', '状态'])
