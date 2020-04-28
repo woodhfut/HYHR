@@ -1,6 +1,7 @@
 import sqlite3
 import pandas as pd
 import datetime
+from calendar import monthrange
 
 db = sqlite3.connect('../db.sqlite3')
 
@@ -27,41 +28,52 @@ df = pd.read_excel('book.xlsx')
 #     cur.execute(f'insert into sb_customer("name", "pid", "phone", "hukou", "status") values("{name}", "{pid}", "{phone}", "{hukou}","{status}")')
 #     names[name]= name
 
-
+orders = {}
 for row in df.values:
     name = row[7]
     ret = cur.execute(f'select id from sb_customer where name = "{name}"')
     customer = ret.fetchone()[0]
     #print(customer)
-    bdate = datetime.date(row[0], row[1], row[2])
-    edate= datetime.date(row[3], row[4], row[5])
+    bdate = datetime.date(row[0], row[1], 1)
+    if row[4]>1:
+        edate= datetime.date(row[3], row[4]-1, monthrange(row[3], row[4]-1)[1])
+    else:
+        edate = datetime.date(row[3]-1, 12, monthrange(row[3]-1, 12)[1])
+
     fee = float(row[14]) if not pd.isnull(row[14]) else 0
     paymethod = row[6]
     
     ret = cur.execute(f'select id from sb_product where name = "服务费"')
     product = ret.fetchone()[0]
-    cur.execute(f'insert into sb_service_order("customer_id", "product_id", "svalidfrom", "svalidto", "stotal_price", "paymethod", "orderDate") values("{customer}", "{product}", "{bdate}", "{edate}", "{fee}","{paymethod}", "{datetime.date.today()}")')
+    if not (name, bdate, edate, product) in orders:
+        cur.execute(f'insert into sb_service_order("customer_id", "product_id", "svalidfrom", "svalidto", "stotal_price", "paymethod", "orderDate") values("{customer}", "{product}", "{bdate}", "{edate}", "{fee}","{paymethod}", "{datetime.date.today()}")')
+        orders[(name, bdate, edate, product)] = True
     
     ret = cur.execute(f'select id from sb_product where name = "社保"')
     product = ret.fetchone()[0]
     product_base = float(row[10])
     fee = float(row[11]) if not pd.isnull(row[11]) else 0
-    cur.execute(f'insert into sb_product_order("customer_id", "product_id", "ordertype_id", "district_id",  "validfrom", "validto", "total_price", "paymethod", "orderDate", "product_base") values("{customer}", "{product}", "1", "1", "{bdate}", "{edate}", "{fee}","{paymethod}", "{datetime.date.today()}", "{product_base}")')
+    if not (name, bdate, edate, product) in orders:
+        cur.execute(f'insert into sb_product_order("customer_id", "product_id", "ordertype_id", "district_id",  "validfrom", "validto", "total_price", "paymethod", "orderDate", "product_base") values("{customer}", "{product}", "1", "1", "{bdate}", "{edate}", "{fee}","{paymethod}", "{datetime.date.today()}", "{product_base}")')
+        orders[(name, bdate, edate, product)] = True
 
     if not pd.isnull(row[12]):
         ret = cur.execute(f'select id from sb_product where name = "公积金"')
         product = ret.fetchone()[0]
         product_base = float(row[12])
         fee = float(row[13]) if not pd.isnull(row[13]) else 0
-        cur.execute(f'insert into sb_product_order("customer_id", "product_id", "ordertype_id", "district_id",  "validfrom", "validto", "total_price", "paymethod", "orderDate", "product_base") values("{customer}", "{product}", "1", "1", "{bdate}", "{edate}", "{fee}","{paymethod}", "{datetime.date.today()}", "{product_base}")')
-    
+        if not (name, bdate, edate, product) in orders:
+            cur.execute(f'insert into sb_product_order("customer_id", "product_id", "ordertype_id", "district_id",  "validfrom", "validto", "total_price", "paymethod", "orderDate", "product_base") values("{customer}", "{product}", "1", "1", "{bdate}", "{edate}", "{fee}","{paymethod}", "{datetime.date.today()}", "{product_base}")')
+            orders[(name, bdate, edate, product)] = True
+
     if not pd.isnull(row[15]):
         ret = cur.execute(f'select id from sb_product where name = "残保金"')
         product = ret.fetchone()[0]
         product_base=0
         fee = float(row[15])
-        cur.execute(f'insert into sb_product_order("customer_id", "product_id", "ordertype_id", "district_id",  "validfrom", "validto", "total_price", "paymethod", "orderDate", "product_base") values("{customer}", "{product}", "1", "1", "{bdate}", "{edate}", "{fee}","{paymethod}", "{datetime.date.today()}", "{product_base}")')
-
+        if not (name, bdate, edate, product) in orders:
+            cur.execute(f'insert into sb_product_order("customer_id", "product_id", "ordertype_id", "district_id",  "validfrom", "validto", "total_price", "paymethod", "orderDate", "product_base") values("{customer}", "{product}", "1", "1", "{bdate}", "{edate}", "{fee}","{paymethod}", "{datetime.date.today()}", "{product_base}")')
+            orders[(name, bdate, edate, product)] = True
 
 # cur.execute(f'delete from sb_service_order')
 # cur.execute(f'delete from sb_product_order')

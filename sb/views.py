@@ -132,23 +132,29 @@ def sb_query(request):
                         if int(itemType) == 0:
                             result = Product_Order.objects.order_by('customer__name','-id')
                         else:
-                            result = Service_Order.objectsorder_by('customer__name','-id')
+                            result = Service_Order.objects.order_by('customer__name','-id')
                     
                     if name and len(name.strip()) > 0:
                         result = result.filter(customer__name__icontains=name)
                     if pid and len(pid.strip())> 0:
                         result = result.filter(customer__pid=pid)
-                    if dateFrom:                 
-                        result = result.filter(validTo__gte=form.cleaned_data['dateFrom'])
-                    if dateTo:             
-                        result = result.filter(validFrom__lte=form.cleaned_data['dateTo'])
+                    if dateFrom: 
+                        if int(itemType)==0:                
+                            result = result.filter(validTo__gte=form.cleaned_data['dateFrom'])
+                        else:
+                            result = result.filter(svalidTo__gte=form.cleaned_data['dateFrom'])
+                    if dateTo:   
+                        if int(itemType)==0:          
+                            result = result.filter(validFrom__lte=form.cleaned_data['dateTo'])
+                        else:
+                            result = result.filter(svalidFrom__lte=form.cleaned_data['dateTo'])
                     
                     
                     if int(prodName) != 0:
                         result = result.filter(product__code = int(prodName))
 
                     if int(cstatus) == 0:
-                        result =[r for r in result if r.product.code & r.customer.status != CustomerStatusCode.Disabled.value]
+                        result =[r for r in result if r.customer.status != CustomerStatusCode.Disabled.value]
                         
                     threading.Thread(target=export_query_csv_thread, args=(request, result,int(itemType))).start()
 

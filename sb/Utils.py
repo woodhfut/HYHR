@@ -17,6 +17,8 @@ class ProductCode(Enum):
     SB = 1
     GJJ = 2
     GS = 4
+    CBJ = 8
+    FEE = 16
 
 
 @unique
@@ -25,6 +27,8 @@ class CustomerStatusCode(Enum):
     SB = 1
     GJJ = 2
     GS = 4
+    CBJ = 8
+    FEE = 16
 
 
 @unique
