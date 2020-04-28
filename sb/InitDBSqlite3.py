@@ -1,6 +1,6 @@
 import sqlite3
 
-db = sqlite3.connect('db.sqlite3')
+db = sqlite3.connect('../db.sqlite3')
 
 cur = db.cursor()
 
@@ -37,6 +37,8 @@ cur.execute('insert into sb_ordertype("name") values("正常缴费")')
 cur.execute('insert into sb_ordertype("name") values("年内补缴")')
 cur.execute('insert into sb_ordertype("name") values("跨年补缴")')
 cur.execute('insert into sb_ordertype("name") values("最近三个月补缴")')
+
+
 
 db.commit()
 cur.close()

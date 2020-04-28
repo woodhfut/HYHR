@@ -4,3 +4,5 @@
 static/HYHR/sa.csv
 *.csv
 *.pkl
+sb/Book.xlsx
+*.sqlite3

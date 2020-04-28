@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import user_passes_test, permission_required
 from django.db import transaction
 from .forms import QueryForm, CustomerForm, Product_OrderForm, Service_OrderForm, OperationQueryForm
 from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, \
-                    PayMethod, Operations, User_extra_info, TodoList
+                    Operations, User_extra_info, TodoList
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, SendPushMessage
 from calendar import monthrange
@@ -264,7 +264,7 @@ def sb_add(request, code):
                     district = District.objects.get(name=dstName)
 
                     paymtdName = p_cd['paymethod']
-                    paymtd = PayMethod.objects.get(name=paymtdName)
+                    paymtd = paymtdName#PayMethod.objects.get(name=paymtdName)
 
                     p_order, created = Product_Order.objects.get_or_create(
                         customer=customer, 
@@ -277,7 +277,7 @@ def sb_add(request, code):
                             'paymethod' : paymtd,    
                             'product_base' : p_cd['product_base'],
                             'total_price' : p_cd['total_price'],
-                            'payaccount' : p_cd['payaccount'],
+                            #'payaccount' : p_cd['payaccount'],
                             #'orderDate' : p_cd['orderDate'],
                             'note' : p_cd['note']
                         },
@@ -303,7 +303,7 @@ def sb_add(request, code):
                             'sprice2Partner': s_cd['sprice2Partner'],
                             'snote' : s_cd['snote'],
                             'paymethod' : s_cd['paymethod'],
-                            'payaccount' : s_cd['payaccount'],
+                            #'payaccount' : s_cd['payaccount'],
                             #'orderDate' : p_cd['orderDate'],
                             'partner': s_cd['partner'],
                         },
@@ -397,7 +397,7 @@ def sb_reorder(request,code,pid):
                 # product = Product.objects.get(name = productName)
 
                 paymthdname = p_cd['paymethod']
-                paymtd = PayMethod.objects.get(name=paymthdname)
+                paymtd = paymthdname#PayMethod.objects.get(name=paymthdname)
 
                 dstName = p_cd['district']
                 district = District.objects.get(name= dstName)
@@ -412,7 +412,7 @@ def sb_reorder(request,code,pid):
                             'product_base' : p_cd['product_base'],
                             'total_price' : p_cd['total_price'],
                             'paymethod' : paymtd,
-                            'payaccount' : p_cd['payaccount'],
+                            #'payaccount' : p_cd['payaccount'],
                             #orderDate = p_cd['orderDate'],
                             'note' : p_cd['note']
                         },)
@@ -436,7 +436,7 @@ def sb_reorder(request,code,pid):
                         if not Service_Order.objects.filter(customer__pid = customer.pid,product=product, 
                             svalidTo__gte=s_cd['svalidTo'], svalidFrom__lte=s_cd['svalidFrom']).exists(): 
                             spaymthdname = s_cd['paymethod']
-                            spaymtd = PayMethod.objects.get(name=paymthdname)
+                            spaymtd = spaymthdname#PayMethod.objects.get(name=paymthdname)
 
                             s_order = Service_Order.objects.create(
                                 customer = customer,
@@ -445,7 +445,7 @@ def sb_reorder(request,code,pid):
                                 svalidTo = s_cd['svalidTo'],
                                 stotal_price = s_cd['stotal_price'],
                                 paymethod =spaymtd,
-                                payaccount = s_cd['payaccount'],
+                                #payaccount = s_cd['payaccount'],
                                 partner = s_cd['partner'],
                                 sprice2Partner = s_cd['sprice2Partner'],
                                 #orderDate = p_cd['orderDate'],

@@ -84,7 +84,7 @@ class Product_OrderForm(ModelForm):
                 'product_base':_('基数'),
                 'total_price':_('总价'),
                 'paymethod':_('支付方式'),
-                'payaccount':_('支付账户'),
+                #'payaccount':_('支付账户'),
                 #'orderDate':_('下单日期'),
                 'note':_('备注'),
                 
@@ -111,7 +111,7 @@ class Service_OrderForm(ModelForm):
         return tp
     class Meta:
         model = Service_Order
-        fields=['svalidFrom', 'svalidTo', 'stotal_price', 'paymethod','payaccount','partner','sprice2Partner','snote']
+        fields=['svalidFrom', 'svalidTo', 'stotal_price', 'paymethod','partner','sprice2Partner','snote']
         labels = {
                 #'customer':_('客户姓名'),
                 #'product':_('业务名称'),
@@ -119,7 +119,7 @@ class Service_OrderForm(ModelForm):
                 'svalidTo':_('结束日期'),
                 'stotal_price':_('总价'),
                 'paymethod':_('支付方式'),
-                'payaccount':_('支付账户'),
+                #'payaccount':_('支付账户'),
                 #'orderDate':_('下单日期'),
                 'partner':_('合作伙伴'),
                 'sprice2Partner':_('应给合伙人费用'),

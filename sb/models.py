@@ -40,7 +40,7 @@ class Partner(models.Model):
 class Customer(models.Model):
     name = models.CharField(max_length = 30)
     pid = models.CharField(max_length=18)
-    phone = models.CharField(max_length = 11) 
+    phone = models.CharField(max_length = 11, null=True, blank=True) #公司客户，找对接人.
     Hukou_Type = (
         ('C','城市'),
         ('N','农村'),
@@ -62,10 +62,10 @@ class Customer(models.Model):
 class Product(models.Model):
     name = models.CharField(max_length = 30)
     code = models.PositiveSmallIntegerField( default=1)
-    lowest_baseline = models.FloatField()
+    #lowest_baseline = models.FloatField()
     customers = models.ManyToManyField(Customer, through='Product_Order')
-    validFrom = models.DateField()
-    validTo = models.DateField()
+    #validFrom = models.DateField()
+    #validTo = models.DateField()
     note = models.TextField(max_length = 50, null= True, blank=True)
     def __str__(self):
         return self.name
@@ -91,8 +91,9 @@ class Service_Order(models.Model):
     svalidFrom = models.DateField()
     svalidTo = models.DateField()
     stotal_price = models.FloatField()  
-    paymethod = models.ForeignKey(PayMethod, on_delete= models.CASCADE)
-    payaccount = models.CharField(max_length = 30)
+    #paymethod = models.ForeignKey(PayMethod, on_delete= models.CASCADE)
+    paymethod =  models.CharField(max_length = 100)
+    #payaccount = models.CharField(max_length = 30)
     
     orderDate = models.DateField(auto_now_add=True)
     
@@ -152,8 +153,9 @@ class Product_Order(models.Model):
     validTo = models.DateField()
     total_price = models.FloatField() 
 
-    paymethod = models.ForeignKey(PayMethod, on_delete= models.CASCADE)
-    payaccount = models.CharField(max_length = 30)
+    #paymethod = models.ForeignKey(PayMethod, on_delete= models.CASCADE)
+    paymethod = models.CharField(max_length = 100)
+    #payaccount = models.CharField(max_length = 30)
     
     orderDate = models.DateField(auto_now_add=True)
 
