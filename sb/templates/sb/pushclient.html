@@ -18,7 +18,7 @@
         
         <label class="col-sm-2 control-label">扫描以下二维码登录微信</label>
         <br/>
-        {% load staticfiles %}
+        {% load static %}
         <img  style="width: 200px; height: 200px;" src="{% static QR %}" />
         <form class="form-horizontal" role="form" method="POST" id="sendmsgform">
                 {% csrf_token %}

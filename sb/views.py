@@ -9,7 +9,7 @@ from .forms import QueryForm, CustomerForm, Product_OrderForm, Service_OrderForm
 from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, \
                     Operations, User_extra_info, TodoList
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, SendPushMessage
+from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, SendPushMessage, getNextMonthRange
 from calendar import monthrange
 from wxpy import Bot
 import os
@@ -53,7 +53,7 @@ def export_query_csv_thread(request, rst_list, itemType):
         filename = request.user.username + '_query.csv'
         request.session['result_file_query'] = filename
     try:
-        with open(os.path.join(settings.STATICFILES_DIRS[0],'HYHR/{}'.format(filename)), 'w', encoding='utf-8-sig') as f:
+        with open(os.path.join(settings.STATICFILES_DIRS[0],'HYHR/{}'.format(filename)), 'w', encoding='utf-8-sig', newline='') as f:
             writer = csv.writer(f) 
             if itemType == 0: #Product order
                 writer.writerow(['姓名', '身份证号', '手机号', '业务名称','业务类型', '所在区县', '户口性质', '基数', '总价','开始日期', '截至日期', '下单日期', '状态'])
@@ -152,6 +152,9 @@ def sb_query(request):
                     
                     if int(prodName) != 0:
                         result = result.filter(product__code = int(prodName))
+
+                    if int(itemType)==1:
+                        result = result.filter(product__code = ProductCode.FEE.value)
 
                     if int(cstatus) == 0:
                         result =[r for r in result if r.customer.status != CustomerStatusCode.Disabled.value]
@@ -389,7 +392,7 @@ def sb_reorder(request,code,pid):
     if request.POST:
         p_order_form = Product_OrderForm(request.POST)
         checkServiceFee = request.POST.get('chkServiceFee',False)
-        latestsrecs = Service_Order.objects.filter(customer__pid = pid, product__code = code).order_by('-svalidTo')
+        latestsrecs = Service_Order.objects.filter(customer__pid = pid, product__code = ProductCode.FEE.value).order_by('-svalidTo')
         latestsvcRec = None
         if len(latestsrecs) > 0:
             latestsvcRec = latestsrecs[0]
@@ -439,14 +442,15 @@ def sb_reorder(request,code,pid):
                     if s_order_form.is_valid():
                         s_cd = s_order_form.cleaned_data
                         ###TODO: Here constrains only include situation... need more precise validation
-                        if not Service_Order.objects.filter(customer__pid = customer.pid,product=product, 
+                        product_fee = Product.objects.get(code=ProductCode.FEE.value)
+                        if not Service_Order.objects.filter(customer__pid = customer.pid,product=product_fee, 
                             svalidTo__gte=s_cd['svalidTo'], svalidFrom__lte=s_cd['svalidFrom']).exists(): 
                             spaymthdname = s_cd['paymethod']
                             spaymtd = spaymthdname#PayMethod.objects.get(name=paymthdname)
 
                             s_order = Service_Order.objects.create(
                                 customer = customer,
-                                product = product,
+                                product = product_fee,
                                 svalidFrom = s_cd['svalidFrom'],
                                 svalidTo = s_cd['svalidTo'],
                                 stotal_price = s_cd['stotal_price'],
@@ -534,10 +538,10 @@ def sb_reorder(request,code,pid):
                                 
                                 })
     else:
-        
         p_order_form = Product_OrderForm(initial={'product': product})
         s_order_form = Service_OrderForm()    
-        latestsrecs = Service_Order.objects.filter(customer__pid = pid, product__code=code).order_by('-svalidTo')
+
+        latestsrecs = Service_Order.objects.filter(customer__pid = pid, product__code=ProductCode.FEE.value).order_by('-svalidTo')
         latestsvcRec = None
         if len(latestsrecs) > 0:
             latestsvcRec = latestsrecs[0]
@@ -653,9 +657,9 @@ def sb_remove_id(request,code, pid):
         
         try:
             #todo: if client has ordered next month of product, you are not allowed to remove it. unless refund...
-            today = date.today()
-            startdate = date(today.year, today.month+1, 1)
-            enddate = date(today.year, today.month+1, monthrange(today.year, today.month+1)[1])
+            nextmonth = getNextMonthRange()
+            startdate = nextmonth[0]
+            enddate = nextmonth[1]
 
             if customer.status & cstatus2remove.value == CustomerStatusCode.Disabled.value:
                 return render(request, 'sb/sb_remove_confirm.html',
@@ -725,8 +729,9 @@ def getbillcheckCustomers(code):
         logger.info('startdate:{}, enddate:{}'.format(startdate.strftime('%Y-%m-%d'), enddate.strftime('%Y-%m-%d')))
         porders = Product_Order.objects.filter(product__code =code,  validFrom__lte=startdate, validTo__gte=enddate,customer__in=customers)
 
-        snextmonth = date(today.year, today.month+1, 1)
-        enextmonth = date(today.year, today.month+1, monthrange(today.year, today.month+1)[1])
+        nextmonth = getNextMonthRange()
+        snextmonth = nextmonth[0]
+        enextmonth = nextmonth[1]
         for c in customers:
             if Product_Order.objects.filter(customer=c, product__code=code, validFrom__lte=snextmonth, validTo__gte=enextmonth).exists():
                 porders = porders.exclude(customer=c, product__code = code)
@@ -741,12 +746,12 @@ def export_billcheck_csv_thread(request, rst_list):
         filename = request.user.username + '_billcheck.csv'
         request.session['result_file_billcheck'] = filename
     try:
-        with open(os.path.join(settings.STATICFILES_DIRS[0],'HYHR/{}'.format(filename)), 'w', encoding='gb2312') as f:
+        with open(os.path.join(settings.STATICFILES_DIRS[0],'HYHR/{}'.format(filename)), 'w', encoding='utf-8-sig', newline='') as f:
             writer = csv.writer(f) 
             
             writer.writerow(['姓名', '身份证号', '手机号','微信', '业务名称', '所在区县','户口性质','基数','状态'])
             for rst in rst_list:               
-                item = [rst.customer.name, rst.customer.pid, rst.customer.phone, rst.customer.wechat, rst.product.name, rst.district, rst.customer.get_hukou_display(),rst.product_base, rst.customer.status]
+                item = [rst.customer.name, '"' +rst.customer.pid+'"', rst.customer.phone, rst.customer.wechat, rst.product.name, rst.district, rst.customer.get_hukou_display(),rst.product_base, rst.customer.status]
                 writer.writerow(item)
            
     except Exception as ex:
@@ -775,8 +780,10 @@ def sb_billcheck(request, code):
             logger.info('startdate:{}, enddate:{}'.format(startdate.strftime('%Y-%m-%d'), enddate.strftime('%Y-%m-%d')))
             porders = Product_Order.objects.filter(product__code =code,  validFrom__lte=startdate, validTo__gte=enddate,customer__in=customers).order_by('id')
 
-            snextmonth = date(today.year, today.month+1, 1)
-            enextmonth = date(today.year, today.month+1, monthrange(today.year, today.month+1)[1])
+            nextmonth = getNextMonthRange()
+            snextmonth = nextmonth[0]
+            enextmonth = nextmonth[1]
+            
             for c in customers:
                 if Product_Order.objects.filter(customer=c, product__code=code, validFrom__lte=snextmonth, validTo__gte=enextmonth).exists():
                     porders = porders.exclude(customer=c, product__code = code)

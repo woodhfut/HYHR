@@ -6,3 +6,5 @@ static/HYHR/sa.csv
 *.pkl
 sb/Book.xlsx
 *.sqlite3
+sb/~$Book.xlsx
+.vscode/settings.json

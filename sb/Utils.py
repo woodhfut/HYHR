@@ -1,4 +1,5 @@
-
+from datetime import date
+from calendar import monthrange
 from enum import Enum,unique
 from sb.models import Customer
 from wxpy import *
@@ -36,6 +37,17 @@ class CustomerOperations(Enum):
     ADD = 1
     REORDER =2
     REMOVE = 3
+
+def getNextMonthRange(dt = date.today()):
+    today = dt
+    if today.month < 12:
+        begin = date(today.year, today.month+1, 1)
+        end = date(today.year, today.month+1, monthrange(today.year, today.month+1)[1])
+    else:
+        begin = date(today.year+1, 1, 1)
+        end = date(today.year+1, 1, 31)
+    return (begin, end)
+
 
 def getWXCachePath(sesskey):
     return os.path.join(settings.WXPYCACHE_DIR, '{}.pkl'.format(sesskey))

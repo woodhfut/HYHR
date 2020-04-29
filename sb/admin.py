@@ -3,10 +3,23 @@ from django.contrib import admin
 # Register your models here.
 from .models import Customer, Product, Product_Order, Service_Order, Partner, User_extra_info,District, OrderType, PayMethod, Operations, TodoList
 
-admin.site.register(Customer)
+@admin.register(Customer)
+class CustomerAdmin(admin.ModelAdmin):
+    search_fields = ['name']
+
+
+@admin.register(Product_Order)
+class Product_Order_Admin(admin.ModelAdmin):
+    search_fields = ['customer__name']
+
+@admin.register(Service_Order)
+class Service_Order_Admin(admin.ModelAdmin):
+    search_fields = ['customer__name']
+
+#admin.site.register(CustomerAdmin)
 admin.site.register(Product)
-admin.site.register(Product_Order)
-admin.site.register(Service_Order)
+#admin.site.register(Product_Order)
+#admin.site.register(Service_Order)
 admin.site.register(Partner)
 admin.site.register(District)
 admin.site.register(OrderType)
