@@ -38,6 +38,12 @@ class CustomerOperations(Enum):
     REORDER =2
     REMOVE = 3
 
+class BillCheckAllResult:
+    def __init__(self, customer, records):
+        self.customer = customer
+        self.records = records
+        
+
 def getNextMonthRange(dt = date.today()):
     today = dt
     if today.month < 12:

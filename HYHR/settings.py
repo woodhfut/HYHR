@@ -201,7 +201,7 @@ STATICFILES_DIRS = (os.path.join(BASE_DIR,'static') ,)
 
 LOGIN_REDIRECT_URL = '/'
 
-DEFAULT_PAGE_COUNT = 15
+DEFAULT_PAGE_COUNT = 50
 
 WXPYCACHE_DIR = os.path.join(BASE_DIR, 'wxpycache')
 

@@ -9,7 +9,7 @@ from .forms import QueryForm, CustomerForm, Product_OrderForm, Service_OrderForm
 from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, \
                     Operations, User_extra_info, TodoList
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, SendPushMessage, getNextMonthRange
+from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, SendPushMessage, getNextMonthRange, BillCheckAllResult
 from calendar import monthrange
 from wxpy import Bot
 import os
@@ -23,6 +23,7 @@ from wsgiref.util import FileWrapper
 from django.db.models import Sum, F
 import uuid
 from django.views import View
+import math
 import logging
 logger = logging.getLogger(__name__)
 
@@ -756,25 +757,115 @@ def export_billcheck_csv_thread(request, rst_list):
            
     except Exception as ex:
         logger.error('exception in export thread. {}'.format(ex))
-                
+
+def export_billcheckAll_csv_thread(request, rst_list):
+    if request.session.get('result_file_billcheckAll'):
+        filename = request.session.get('result_file_billcheckAll')
+    else:
+        filename = request.user.username + '_billcheckAll.csv'
+        request.session['result_file_billcheckAll'] = filename
+    try:
+        with open(os.path.join(settings.STATICFILES_DIRS[0],'HYHR/{}'.format(filename)), 'w', encoding='utf-8-sig', newline='') as f:
+            writer = csv.writer(f) 
+            
+            #writer.writerow(['姓名', '身份证号', '手机号','微信', '业务名称', '所在区县','户口性质','基数','状态'])
+            for rst in rst_list:               
+                item = [rst.customer.name]
+                item.extend(rst.records)
+                writer.writerow(item)
+           
+    except Exception as ex:
+        logger.error('exception in export thread. {}'.format(ex))
+
+
+@user_passes_test(lambda u: u.is_superuser, login_url='/login/')
+def sb_billcheck_all(request):
+    try:
+        today = date.today()
+        month = today.month
+        title = f'{month}月对账'
+
+        #check all product records in current month 
+        startDate = date(today.year, today.month, 1)
+        endDate = date(today.year, today.month, monthrange(today.year, today.month)[1])
+        pOrders = Product_Order.objects.filter(validFrom__lte=startDate, validTo__gte=endDate, customer__status__gt=CustomerStatusCode.Disabled.value)
+
+        nextMonth = getNextMonthRange()
+        startNextMonth = nextMonth[0]
+        endNextMonth = nextMonth[1]
+
+        #pOrders = pOrders.filter(validTo__lt=endNextMonth)
+
+        result = {}
+        for p in pOrders:
+            if Product_Order.objects.filter(customer__pid=p.customer.pid, validTo__gte=endNextMonth, product__code=p.product.code).exists():
+                continue
+            pos = int(math.log2(p.product.code))
+            if p.customer.name not in result:
+                rec = [0,0,0,0,0,0] #sb, gjj, gs, cbj, fee, total
+                rec[pos] = p.total_price
+                rec[-1] = p.total_price
+                result[p.customer.name] = BillCheckAllResult(p.customer, rec)
+            else:
+                result[p.customer.name].records[pos] = p.total_price
+                result[p.customer.name].records[-1] = round(result[p.customer.name].records[-1]+p.total_price, 2)
+        
+            if not Service_Order.objects.filter(customer__pid=p.customer.pid, svalidFrom__lte=startNextMonth, svalidTo__gte=endNextMonth, customer__status__gt=CustomerStatusCode.Disabled.value).exists():
+                lastRec = Service_Order.objects.filter(customer__pid=p.customer.pid).order_by('-id')[0]
+                result[p.customer.name].records[-2] = lastRec.stotal_price
+                result[p.customer.name].records[-1] = round(result[p.customer.name].records[-1] + lastRec.stotal_price, 2)
+        
+        records = [v for v in result.values()]
+        threading.Thread(target=export_billcheckAll_csv_thread, args=(request, records,)).start()
+        pagecount = settings.DEFAULT_PAGE_COUNT
+        pagenum = 1
+
+        if request.POST:
+            pagecount = request.POST.get('page_count', pagecount)
+            pagenum = request.POST.get('page_id', pagenum)
+            
+            try:
+                pagecount = int(pagecount)
+            except:
+                pagecount = settings.DEFAULT_PAGE_COUNT
+            try:
+                pagenum = int(pagenum)
+            except:
+                pagenum = 1
+        paginator = Paginator(records, pagecount)
+
+        try:
+            rst = paginator.page(pagenum)
+        except PageNotAnInteger:
+            rst = paginator.page(1)            
+        except EmptyPage:
+            rst = paginator.page(paginator.num_pages)
+
+        return render(request, 'sb/sb_billcheck_all.html',
+        {
+            'title':title,
+            'porders': rst,
+            'pagecount': pagecount,
+        }) 
+
+            
+
+    except Exception as ex:
+        logger.error(f'exception ocurred in billcheck_all, {ex}')
+        return render(request, 'HYHR/error.html', {'errormessage': ex,})
+
+
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
 def sb_billcheck(request, code):
     try:
-        month = datetime.now().month
+        today = date.today()
+        month = today.month
         product = Product.objects.get(code=code)
         title = '{}月{}对账'.format(month, product.name)
-        cscode = CustomerStatusCode.Disabled
-        if product.code == ProductCode.SB.value:
-            cscode = CustomerStatusCode.SB
-        elif product.code == ProductCode.GJJ.value:
-            cscode = CustomerStatusCode.GJJ
-        elif product.code == ProductCode.GS.value:
-            cscode = CustomerStatusCode.GS
 
-        customers =[c for c in Customer.objects.filter(status__gt = CustomerStatusCode.Disabled.value) if c.status & cscode.value == cscode.value]
+        customers =[c for c in Customer.objects.filter(status__gt = CustomerStatusCode.Disabled.value) if c.status & product.code == product.code]
 
         if len(customers):
-            today = date.today()
             startdate = date(today.year, today.month, 1)
             enddate = date(today.year, today.month, monthrange(today.year, today.month)[1])
             logger.info('startdate:{}, enddate:{}'.format(startdate.strftime('%Y-%m-%d'), enddate.strftime('%Y-%m-%d')))

@@ -12,6 +12,7 @@ urlpatterns = [
     url(r'^remove/(?P<code>[1|2|4])/$', views.sb_remove, name='sb_remove'),
     url(r'^remove/(?P<code>[1|2|4])/(?P<pid>(\d{6})(\d{4})(\d{2})(\d{2})(\d{3})([0-9]|X))/$', views.sb_remove_id, name='sb_reorder_id'),
     url(r'^billcheck/(?P<code>[1|2|4])/$', views.sb_billcheck, name='sb_billcheck'),
+    url(r'^billcheckAll/$', views.sb_billcheck_all, name='sb_billcheck_all'),
     url(r'^pushclient/(?P<code>[1|2|4])/$', views.sb_pushclient, name='sb_pushclient'),
     url(r'^export/csv/(?P<path>\w+)/$', views.export_csv, name='export_csv'),
     url(r'^todolist/$', views.sb_todolist, name='sb_todolist'),
