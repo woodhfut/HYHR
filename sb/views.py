@@ -794,15 +794,13 @@ def sb_billcheck_all(request):
         startNextMonth = nextMonth[0]
         endNextMonth = nextMonth[1]
 
-        #pOrders = pOrders.filter(validTo__lt=endNextMonth)
-
         result = {}
         for p in pOrders:
             if Product_Order.objects.filter(customer__pid=p.customer.pid, validTo__gte=endNextMonth, product__code=p.product.code).exists():
                 continue
             pos = int(math.log2(p.product.code))
             if p.customer.name not in result:
-                rec = [0,0,0,0,0,0] #sb, gjj, gs, cbj, fee, total
+                rec = [0]*6 #sb, gjj, gs, cbj, fee, total
                 rec[pos] = p.total_price
                 rec[-1] = p.total_price
                 result[p.customer.name] = BillCheckAllResult(p.customer, rec)

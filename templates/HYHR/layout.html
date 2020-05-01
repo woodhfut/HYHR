@@ -45,6 +45,11 @@
         .navbar a{
             font-size: 120%;
         }
+
+        li ul li a span{
+            padding-right: 20%;
+            color:skyblue;
+        }
 </style> 
 </head>
 
@@ -67,35 +72,36 @@
                                 <span class="glyphicon glyphicon-shopping-cart">业务<b class="caret"></b>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="{% url 'sb:sb_index' %}"><span class="glyphicon glyphicon-info-sign" style="padding-right: 20%"></span>业务简介</a> </li>
+                            <li><a href="{% url 'sb:sb_index' %}"><span class="glyphicon glyphicon-info-sign" ></span>业务简介</a> </li>
                             
                             {% if user.is_authenticated and user.is_superuser %}
                             <li class="offset-right dropdown">
-                                    <a href="#" class="dropdown-toggle"><span class="glyphicon glyphicon-heart-empty" style="padding-right: 20%"></span>社保<b class="caret"></b></a>
+                                    <a href="#" class="dropdown-toggle"><span class="glyphicon glyphicon-heart-empty"></span>社保<b class="caret"></b></a>
                                     <ul class="dropdown-menu">
-                                        <li><a href="{% url 'sb:sb_add' 1 %}">新增</a> </li>
-                                        <li><a href="{% url 'sb:sb_remove' 1 %}">减员</a></li>
-                                        <li><a href="{% url 'sb:sb_billcheck' 1 %}">对账</a></li>
+                                        <li><a href="{% url 'sb:sb_add' 1 %}"><span class="glyphicon glyphicon-plus"></span>新增</a> </li>
+                                        <li><a href="{% url 'sb:sb_remove' 1 %}"><span class="glyphicon glyphicon-minus-sign"></span>减员</a></li>
+                                        <li><a href="{% url 'sb:sb_billcheck' 1 %}"><span class="glyphicon glyphicon-check"></span>对账</a></li>
                                     </ul>
                                   </li>
 
                             <li class="offset-right dropdown">
-                                    <a href="#" class="dropdown-toggle"><span class="glyphicon glyphicon-usd" style="padding-right: 20%"></span>公积金<b class="caret"></b></a>
+                                    <a href="#" class="dropdown-toggle"><span class="glyphicon glyphicon-usd"></span>公积金<b class="caret"></b></a>
                                     <ul class="dropdown-menu">
-                                        <li><a href="{% url 'sb:sb_add' 2 %}">新增</a> </li>
-                                        <li><a href="{% url 'sb:sb_remove' 2 %}">减员</a></li>
-                                        <li><a href="{% url 'sb:sb_billcheck' 2 %}">对账</a></li>
+                                        <li><a href="{% url 'sb:sb_add' 2 %}"><span class="glyphicon glyphicon-plus"></span>新增</a> </li>
+                                        <li><a href="{% url 'sb:sb_remove' 2 %}"><span class="glyphicon glyphicon-minus-sign"></span>减员</a></li>
+                                        <li><a href="{% url 'sb:sb_billcheck' 2 %}"><span class="glyphicon glyphicon-check"></span>对账</a></li>
                                     </ul>
                             </li>
 
                             <li class="offset-right dropdown">
-                                    <a href="#" class="dropdown-toggle"><span class="glyphicon glyphicon-credit-card" style="padding-right: 20%"></span>个税<b class="caret"></b></a>
+                                    <a href="#" class="dropdown-toggle"><span class="glyphicon glyphicon-credit-card"></span>个税<b class="caret"></b></a>
                                     <ul class="dropdown-menu">
-                                        <li><a href="{% url 'sb:sb_add' 4 %}">新增</a> </li>
-                                        <li><a href="{% url 'sb:sb_remove' 4 %}">减员</a></li>
-                                        <li><a href="{% url 'sb:sb_billcheck' 4 %}">对账</a></li>
+                                        <li><a href="{% url 'sb:sb_add' 4 %}"><span class="glyphicon glyphicon-plus"></span>新增</a> </li>
+                                        <li><a href="{% url 'sb:sb_remove' 4 %}"><span class="glyphicon glyphicon-minus-sign"></span>减员</a></li>
+                                        <li><a href="{% url 'sb:sb_billcheck' 4 %}"><span class="glyphicon glyphicon-check"></span>对账</a></li>
                                     </ul>
                             </li>
+                            <li><a href="{% url 'sb:sb_billcheck_all' %}"><span class="glyphicon glyphicon-check"></span>当月对账</a> </li>
                             {% endif %}
                         </ul>
                     </li>
@@ -105,11 +111,11 @@
                                 <span class="glyphicon glyphicon-search">查询<b class="caret"></b>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="{% url 'sb:sb_query' %}"><span class="glyphicon glyphicon-bullhorn" style="padding-right: 20%"></span>业务查询</a> </li>
+                            <li><a href="{% url 'sb:sb_query' %}"><span class="glyphicon glyphicon-bullhorn"></span>业务查询</a> </li>
                             
                             {% if user.is_authenticated and user.is_superuser %}
-                            <li><a href="{% url 'sb:sb_operationquery' %}"><span class="glyphicon glyphicon-zoom-in" style="padding-right: 20%"></span>增减员查询</a> </li>
-                            <li><a href="{% url 'sb:sb_todolist' %}"><span class="glyphicon glyphicon-check" style="padding-right: 20%"></span>待办事宜查询</a> </li>                            
+                            <li><a href="{% url 'sb:sb_operationquery' %}"><span class="glyphicon glyphicon-zoom-in"></span>增减员查询</a> </li>
+                            <li><a href="{% url 'sb:sb_todolist' %}"><span class="glyphicon glyphicon-tasks"></span>待办事宜查询</a> </li>                            
                             {% endif %}
                         </ul>
                     </li>
@@ -119,10 +125,10 @@
                                 <span class="glyphicon glyphicon-cog">实用工具<b class="caret"></b>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="{% url 'sb:wechatbroadcast' %}"><span class="glyphicon glyphicon-qrcode" style="padding-right: 20%"></span>微信通知</a> </li>
+                            <li><a href="{% url 'sb:wechatbroadcast' %}"><span class="glyphicon glyphicon-qrcode"></span>微信通知</a> </li>
                             {% if user.is_authenticated and user.is_superuser %}
-                            <li><a href="{% url 'sb:sb_partnerbillcheck' %}"><span class="glyphicon glyphicon-certificate" style="padding-right: 20%"></span>合伙人结账</a> </li>
-                            <li><a href="{% url 'sb:sb_todolist_add' %}"><span class="glyphicon glyphicon-check" style="padding-right: 20%"></span>新增待办事宜</a> </li>                          
+                            <li><a href="{% url 'sb:sb_partnerbillcheck' %}"><span class="glyphicon glyphicon-certificate"></span>合伙人结账</a> </li>
+                            <li><a href="{% url 'sb:sb_todolist_add' %}"><span class="glyphicon glyphicon-tasks"></span>新增待办事宜</a> </li>                          
                             {% endif %}
                         </ul>
                     </li>
