@@ -45,7 +45,7 @@
                 {% for fee in record.records%}
                 <td>{{fee}}</td>
                 {% endfor %}    
-                <td><a href="/sb/reorder/{{ord.product.code}}/{{ord.customer.pid}}/">{{rst.product.name}}续费</a></td>
+                <td><a href="/sb/reorderAll/{{record.customer.pid}}/{{record.records}}">{{rst.product.name}}续费</a></td>
             </tr>
         {% endfor %}
     </tbody>

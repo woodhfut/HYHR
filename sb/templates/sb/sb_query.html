@@ -137,7 +137,8 @@
                         <td>{{rst.orderDate}}</td>   
                         <td>{{rst.customer.status}}</td>
                         {% if request.user.is_superuser%}
-                        <td><a href="/sb/reorder/{{rst.product.code}}/{{rst.customer.pid}}/">{{rst.product.name}}续费</a><span>/</span><a href="/sb/remove/{{rst.product.code}}/{{rst.customer.pid}}">减员</a></td>
+                        <td><a href="/sb/reorder/{{rst.product.code}}/{{rst.customer.pid}}/">{{rst.product.name}}续费</a>
+                        {%if rst.product.code != 8 %}<span>/</span><a href="/sb/remove/{{rst.product.code}}/{{rst.customer.pid}}">减员</a>{%endif%}</td>
                         {%endif%}
                     </tr>
                 {% endfor %}

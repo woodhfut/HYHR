@@ -8,7 +8,6 @@ from datetime import datetime, date
 from django.utils import timezone
 from django.contrib.admin.widgets import AdminDateWidget
 
-
 class CustomerForm(ModelForm):
     class Meta:
         model = Customer

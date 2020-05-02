@@ -50,7 +50,9 @@
             padding-right: 20%;
             color:skyblue;
         }
+        
 </style> 
+{% block styles%}{%endblock%}
 </head>
 
 <body>
@@ -78,7 +80,7 @@
                             <li class="offset-right dropdown">
                                     <a href="#" class="dropdown-toggle"><span class="glyphicon glyphicon-heart-empty"></span>社保<b class="caret"></b></a>
                                     <ul class="dropdown-menu">
-                                        <li><a href="{% url 'sb:sb_add' 1 %}"><span class="glyphicon glyphicon-plus"></span>新增</a> </li>
+                                        <li><a href="{% url 'sb:sb_add' 1 %}"><span class="glyphicon glyphicon-plus-sign"></span>新增</a> </li>
                                         <li><a href="{% url 'sb:sb_remove' 1 %}"><span class="glyphicon glyphicon-minus-sign"></span>减员</a></li>
                                         <li><a href="{% url 'sb:sb_billcheck' 1 %}"><span class="glyphicon glyphicon-check"></span>对账</a></li>
                                     </ul>
@@ -87,7 +89,7 @@
                             <li class="offset-right dropdown">
                                     <a href="#" class="dropdown-toggle"><span class="glyphicon glyphicon-usd"></span>公积金<b class="caret"></b></a>
                                     <ul class="dropdown-menu">
-                                        <li><a href="{% url 'sb:sb_add' 2 %}"><span class="glyphicon glyphicon-plus"></span>新增</a> </li>
+                                        <li><a href="{% url 'sb:sb_add' 2 %}"><span class="glyphicon glyphicon-plus-sign"></span>新增</a> </li>
                                         <li><a href="{% url 'sb:sb_remove' 2 %}"><span class="glyphicon glyphicon-minus-sign"></span>减员</a></li>
                                         <li><a href="{% url 'sb:sb_billcheck' 2 %}"><span class="glyphicon glyphicon-check"></span>对账</a></li>
                                     </ul>
@@ -96,7 +98,7 @@
                             <li class="offset-right dropdown">
                                     <a href="#" class="dropdown-toggle"><span class="glyphicon glyphicon-credit-card"></span>个税<b class="caret"></b></a>
                                     <ul class="dropdown-menu">
-                                        <li><a href="{% url 'sb:sb_add' 4 %}"><span class="glyphicon glyphicon-plus"></span>新增</a> </li>
+                                        <li><a href="{% url 'sb:sb_add' 4 %}"><span class="glyphicon glyphicon-plus-sign"></span>新增</a> </li>
                                         <li><a href="{% url 'sb:sb_remove' 4 %}"><span class="glyphicon glyphicon-minus-sign"></span>减员</a></li>
                                         <li><a href="{% url 'sb:sb_billcheck' 4 %}"><span class="glyphicon glyphicon-check"></span>对账</a></li>
                                     </ul>

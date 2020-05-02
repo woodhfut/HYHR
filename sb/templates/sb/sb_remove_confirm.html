@@ -1,5 +1,13 @@
 {% extends 'HYHR/layout.html' %}
 
+{%block styles%}
+<style type="text/css">
+    form div label b {
+        color:skyblue
+    }
+</style>
+{%endblock%}
+
 {% block content %}
 
 <h3>{{title}}</h3>
@@ -7,10 +15,10 @@
     {% csrf_token %}
     <div class="form-group">
             <label class="col-sm-2 control-label">姓名：</label>
-            <label class="col-sm-2 control-label" >{{cname}}</label>      
+            <label class="col-sm-2 control-label" ><b>{{cname}}</b></label>      
 
             <label class="col-sm-2 control-label">身份证号：</label>
-            <label class="col-sm-2 control-label" >{{cpid}}</labe>
+            <label class="col-sm-2 control-label" ><b>{{cpid}}</b></labe>
     </div>
     {% if errormsg %}
     <div class="form-group">

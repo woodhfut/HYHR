@@ -21,6 +21,7 @@ import time
 import csv
 from wsgiref.util import FileWrapper
 from django.db.models import Sum, F
+from django.forms import formset_factory
 import uuid
 from django.views import View
 import math
@@ -385,6 +386,146 @@ def sb_add(request, code):
                   })
 
 
+Product_OrderFormSet = formset_factory(Product_OrderForm, extra=0, max_num=4)
+
+@user_passes_test(lambda u: u.is_superuser, login_url='/login/')
+def sb_reorder_all(request,pid, data):
+    try:
+        customer = get_object_or_404(Customer, pid=pid)
+        data = list(map(lambda x: float(x), data[1:-1].split(',')))
+        logger.info(f'data passed: {data}')
+
+        if request.POST:
+            formset = Product_OrderFormSet(request.POST)
+            records = []
+            if formset.is_valid():
+                for form in formset:
+                    if form.is_valid():
+                        p_cd = form.cleaned_data
+                        dstName = p_cd['district']
+                        district = District.objects.get(name= dstName)
+                        productName = p_cd['product']
+                        product = Product.objects.get(name=productName)
+
+                        p_order, pcreated  = Product_Order.objects.get_or_create(
+                                customer=customer, 
+                                product=product,
+                                validFrom = p_cd['validFrom'],
+                                validTo = p_cd['validTo'],
+                                district = district,
+                                defaults={
+                                    'product_base' : p_cd['product_base'],
+                                    'total_price' : p_cd['total_price'],
+                                    'paymethod' : p_cd['paymethod'],
+                                    #'payaccount' : p_cd['payaccount'],
+                                    #orderDate = p_cd['orderDate'],
+                                    'note' : p_cd['note']
+                                },)
+                        
+                        records.append(p_order)
+                    else:
+                        raise Exception(form.errors)
+                
+                #need pay service fee
+                if data[-2] != 0:
+                    s_order_form = Service_OrderForm(request.POST)
+                    if s_order_form.is_valid():
+                        s_cd = s_order_form.cleaned_data
+                        ###TODO: Here constrains only include situation... need more precise validation
+                        product_fee = Product.objects.get(code=ProductCode.FEE.value)
+                        if not Service_Order.objects.filter(customer__pid = customer.pid,product=product_fee, 
+                            svalidTo__gte=s_cd['svalidTo'], svalidFrom__lte=s_cd['svalidFrom']).exists(): 
+                            spaymthdname = s_cd['paymethod']
+
+                            s_order = Service_Order.objects.create(
+                                customer = customer,
+                                product = product_fee,
+                                svalidFrom = s_cd['svalidFrom'],
+                                svalidTo = s_cd['svalidTo'],
+                                stotal_price = s_cd['stotal_price'],
+                                paymethod =spaymthdname,
+                                #payaccount = s_cd['payaccount'],
+                                partner = s_cd['partner'],
+                                sprice2Partner = s_cd['sprice2Partner'],
+                                #orderDate = p_cd['orderDate'],
+                                snote = s_cd['snote']
+                            )
+                    
+                            with transaction.atomic():
+                                for order in records:
+                                    code = order.product.code
+                                    customer.status |= code
+                                    order.save()
+                                s_order.save()
+                            return render(request, 'sb/reorder_success.html',
+                            {
+                                'title':'{}续费成功!'.format(product.name),
+                            })
+
+                    else:
+                        raise Exception(s_order_form.errors)   
+                else:
+                    with transaction.atomic():
+                        for order in records:
+                            code = order.product.code
+                            customer.status |= code
+                            order.save()
+                    return render(request, 'sb/reorder_success.html',
+                    {
+                        'title':'{}续费成功!'.format(product.name),
+                    })
+            else:
+                raise Exception(formset.errors)        
+        else:
+            inits = []
+            s_order = None
+            nextMonth = getNextMonthRange()
+            
+            for i in range(len(data)-2): #-1 is total value, -2 is fee.
+                if data[i] !=0:
+                    product = Product.objects.get(code=math.pow(2, i))
+                    rec = Product_Order.objects.filter(customer__pid__iexact=pid, product__code=product.code).order_by('-id')[0]
+                    inits.append({
+                        'product': product, 
+                        'total_price': data[i],
+                        'validFrom': nextMonth[0],
+                        'validTo': nextMonth[1],
+                        'product_base': rec.product_base,
+                        'paymethod': rec.paymethod,
+                        })           
+            
+            formset = Product_OrderFormSet(initial=inits)
+            s_latest_rec = None
+            if data[-2]!=0:
+                s_latest_rec = Service_Order.objects.filter(customer__pid__iexact=pid, product__code=ProductCode.FEE.value).order_by('-id')[0]
+                delta = s_latest_rec.svalidTo - s_latest_rec.svalidFrom
+                endMonth = s_latest_rec.svalidTo + delta
+                if(endMonth.day < monthrange(endMonth.year, endMonth.month)[1]):
+                    endMonth = date(endMonth.year, endMonth.month, monthrange(endMonth.year, endMonth.month)[1])
+                logger.info(f'last record: {s_latest_rec.svalidFrom} to {s_latest_rec.svalidTo}, new record: {nextMonth[0]}, {endMonth}')
+                
+                s_order = Service_OrderForm(initial={
+                    'svalidFrom': nextMonth[0], 
+                    'svalidTo': endMonth,
+                    'paymethod': s_latest_rec.paymethod,
+                    'stotal_price': s_latest_rec.stotal_price, 
+                })
+
+            return render(request, 'sb/sb_reorder_all.html', {
+                'title': f'{customer}续费', 
+                'customer': customer,
+                'formset': formset,
+                's_order': s_order,
+                's_last_record': s_latest_rec,
+            })
+    except Exception as ex:
+        logger.error(f'error in sb_reorder_all, ex: {ex}')
+        return render(request, 'HYHR/error.html',
+        {
+            'errormessage': ex,
+            
+        })
+
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
 def sb_reorder(request,code,pid):
 
@@ -647,22 +788,14 @@ def sb_remove_id(request,code, pid):
     op = Operations(customer = customer, 
                     product = product,
                     operation = CustomerOperations.REMOVE.value)
-    if request.POST:
-        cstatus2remove = CustomerStatusCode.Disabled
-        if product.code == ProductCode.SB.value:
-            cstatus2remove = CustomerStatusCode.SB
-        elif product.code == ProductCode.GJJ.value:
-            cstatus2remove = CustomerStatusCode.GJJ
-        elif product.code == ProductCode.GS.value:
-            cstatus2remove = CustomerStatusCode.GS
-        
+    if request.POST:     
         try:
             #todo: if client has ordered next month of product, you are not allowed to remove it. unless refund...
             nextmonth = getNextMonthRange()
             startdate = nextmonth[0]
             enddate = nextmonth[1]
 
-            if customer.status & cstatus2remove.value == CustomerStatusCode.Disabled.value:
+            if customer.status & product.code == CustomerStatusCode.Disabled.value:
                 return render(request, 'sb/sb_remove_confirm.html',
                 {
                     'title' : title,
@@ -681,8 +814,11 @@ def sb_remove_id(request,code, pid):
                 })
             
             else:
-                logger.info('{}-{}'.format(customer.status, cstatus2remove.value))
-                customer.status = customer.status^cstatus2remove.value
+                logger.info('{}-{}'.format(customer.status, code))
+                customer.status ^=product.code
+                if product.code == ProductCode.SB.value and customer.status& ProductCode.CBJ.value == ProductCode.CBJ.value :
+                    customer.status ^= ProductCode.CBJ.value
+
                 logger.info(customer.status)
                 with transaction.atomic():
                     customer.save()
@@ -814,6 +950,12 @@ def sb_billcheck_all(request):
                 result[p.customer.name].records[-1] = round(result[p.customer.name].records[-1] + lastRec.stotal_price, 2)
         
         records = [v for v in result.values()]
+        if len(records) == 0:
+            return render(request, 'sb/sb_billcheck_all.html',
+            {
+                'title': title,
+                'message': '***当前户中所有客户已完成当月缴费,无需对账.***'
+            })
         threading.Thread(target=export_billcheckAll_csv_thread, args=(request, records,)).start()
         pagecount = settings.DEFAULT_PAGE_COUNT
         pagenum = 1
