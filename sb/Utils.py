@@ -19,7 +19,10 @@ class ProductCode(Enum):
     GJJ = 2
     GS = 4
     CBJ = 8
-    FEE = 16
+
+@unique
+class ServiceCode(Enum):
+    FEE = 1
 
 
 @unique
@@ -29,7 +32,6 @@ class CustomerStatusCode(Enum):
     GJJ = 2
     GS = 4
     CBJ = 8
-    FEE = 16
 
 
 @unique

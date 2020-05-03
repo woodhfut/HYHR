@@ -29,6 +29,7 @@ df = pd.read_excel('book.xlsx')
 #     names[name]= name
 
 orders = {}
+serivces = {}
 for row in df.values:
     name = row[7]
     ret = cur.execute(f'select id from sb_customer where name = "{name}"')
@@ -43,11 +44,12 @@ for row in df.values:
     fee = float(row[14]) if not pd.isnull(row[14]) else 0
     paymethod = row[6]
     
-    ret = cur.execute(f'select id from sb_product where name = "服务费"')
-    product = ret.fetchone()[0]
-    if not (name, bdate, edate, product) in orders:
-        cur.execute(f'insert into sb_service_order("customer_id", "product_id", "svalidfrom", "svalidto", "stotal_price", "paymethod", "orderDate") values("{customer}", "{product}", "{bdate}", "{edate}", "{fee}","{paymethod}", "{datetime.date.today()}")')
-        orders[(name, bdate, edate, product)] = True
+    ret = cur.execute(f'select id from sb_service where name = "服务费"')
+    service = ret.fetchone()[0]
+    if not (name, bdate, edate, service) in serivces:
+        cur.execute(f'insert into sb_service_order("customer_id", "service_id", "svalidfrom", "svalidto", "stotal_price", "paymethod", "orderDate") \
+            values("{customer}", "{service}", "{bdate}", "{edate}", "{fee}","{paymethod}", "{datetime.date.today()}")')
+        serivces[(name, bdate, edate, service)] = True
     
     ret = cur.execute(f'select id from sb_product where name = "社保"')
     product = ret.fetchone()[0]

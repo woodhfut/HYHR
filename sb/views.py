@@ -9,7 +9,7 @@ from .forms import QueryForm, CustomerForm, Product_OrderForm, Service_OrderForm
 from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, \
                     Operations, User_extra_info, TodoList
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, SendPushMessage, getNextMonthRange, BillCheckAllResult
+from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, SendPushMessage, getNextMonthRange, BillCheckAllResult, ServiceCode
 from calendar import monthrange
 from wxpy import Bot
 import os
@@ -60,12 +60,12 @@ def export_query_csv_thread(request, rst_list, itemType):
             if itemType == 0: #Product order
                 writer.writerow(['姓名', '身份证号', '手机号', '业务名称','业务类型', '所在区县', '户口性质', '基数', '总价','开始日期', '截至日期', '下单日期', '状态'])
                 for rst in rst_list:               
-                    item = [rst.customer.name, rst.customer.pid, rst.customer.phone, rst.product.name, rst.orderType.name, rst.district.name, rst.customer.get_hukou_display(), rst.product_base, rst.total_price, rst.validFrom, rst.validTo, rst.orderDate, rst.customer.status]
+                    item = [rst.customer.name, '"'+rst.customer.pid+'"', rst.customer.phone, rst.product.name, rst.orderType.name, rst.district.name, rst.customer.get_hukou_display(), rst.product_base, rst.total_price, rst.validFrom, rst.validTo, rst.orderDate, rst.customer.status]
                     writer.writerow(item)
             elif itemType == 1: #service order
                 writer.writerow(['姓名', '身份证号', '手机号', '业务名称', '户口性质', '总价','开始日期', '截至日期', '下单日期', '状态'])
                 for rst in rst_list:               
-                    item = [rst.customer.name, rst.customer.pid, rst.customer.phone, rst.product.name, rst.customer.get_hukou_display(), rst.stotal_price, rst.svalidFrom, rst.svalidTo, rst.orderDate, rst.customer.status]
+                    item = [rst.customer.name, '"'+rst.customer.pid+'"', rst.customer.phone, rst.product.name, rst.customer.get_hukou_display(), rst.stotal_price, rst.svalidFrom, rst.svalidTo, rst.orderDate, rst.customer.status]
                     writer.writerow(item)
             else:
                 raise Exception('invalid item type {}'.format(itemType))    
@@ -125,21 +125,26 @@ def sb_query(request):
                             })
             if form.is_valid():
                 try:
-                    if int(cstatus) == 0:
+                    if int(cstatus) == 0: #only contains active clients
                         if int(itemType) == 0:
                             result = Product_Order.objects.filter(customer__status__gt = 0).order_by('customer__name','-id')
                         else:
                             result = Service_Order.objects.filter(customer__status__gt = 0).order_by('customer__name','-id')
-                    else:
+                    elif int(cstatus)==1:#include all clients
                         if int(itemType) == 0:
                             result = Product_Order.objects.order_by('customer__name','-id')
                         else:
                             result = Service_Order.objects.order_by('customer__name','-id')
+                    else:#only include disabled clients
+                        if int(itemType) == 0:
+                            result = Product_Order.objects.filter(customer__status = 0).order_by('customer__name','-id')
+                        else:
+                            result = Service_Order.objects.filter(customer__status = 0).order_by('customer__name','-id')
                     
                     if name and len(name.strip()) > 0:
-                        result = result.filter(customer__name__icontains=name)
+                        result = result.filter(customer__name__icontains=name.strip())
                     if pid and len(pid.strip())> 0:
-                        result = result.filter(customer__pid=pid)
+                        result = result.filter(customer__pid=pid.strip())
                     if dateFrom: 
                         if int(itemType)==0:                
                             result = result.filter(validTo__gte=form.cleaned_data['dateFrom'])
@@ -152,14 +157,8 @@ def sb_query(request):
                             result = result.filter(svalidFrom__lte=form.cleaned_data['dateTo'])
                     
                     
-                    if int(prodName) != 0:
+                    if int(prodName) != 0 and int(itemType)==0:
                         result = result.filter(product__code = int(prodName))
-
-                    if int(itemType)==1:
-                        result = result.filter(product__code = ProductCode.FEE.value)
-
-                    if int(cstatus) == 0:
-                        result =[r for r in result if r.customer.status != CustomerStatusCode.Disabled.value]
                         
                     threading.Thread(target=export_query_csv_thread, args=(request, result,int(itemType))).start()
 
@@ -180,33 +179,33 @@ def sb_query(request):
                         rst = Service_Order.objects.none()
                 
                 return render(request,'sb/sb_query.html',
-                            {
-                                'title': title,
-                                'pagecount': pagecount,
-                                'collapse': collapse,
-                                'result': rst,
-                                'form':form,
-                                'itemType': str(itemType),
-                                
-                            })
+                {
+                    'title': title,
+                    'pagecount': pagecount,
+                    'collapse': collapse,
+                    'result': rst,
+                    'form':form,
+                    'itemType': str(itemType),
+                    
+                })
             else:
                 return render(request,'sb/sb_query.html',
-                        {
-                            'title': title,
-                            'pagecount': pagecount,
-                            'collapse': collapse,
-                            'form':form,
-                            
-                        })
+                {
+                    'title': title,
+                    'pagecount': pagecount,
+                    'collapse': collapse,
+                    'form':form,
+                    
+                })
         else:
             return render(request,'sb/sb_query.html',
-                        {
-                            'title': title,
-                            'pagecount': 15,
-                            'collapse':1,
-                            'form':form,
-                            
-                        })
+            {
+                'title': title,
+                'pagecount': settings.DEFAULT_PAGE_COUNT,
+                'collapse':1,
+                'form':form,
+                
+            })
     except Exception as ex:
         logger.error('exception in export thread. {}'.format(ex))
         return render(request, 'HYHR/error.html',
@@ -432,7 +431,7 @@ def sb_reorder_all(request,pid, data):
                     if s_order_form.is_valid():
                         s_cd = s_order_form.cleaned_data
                         ###TODO: Here constrains only include situation... need more precise validation
-                        product_fee = Product.objects.get(code=ProductCode.FEE.value)
+                        product_fee = Product.objects.get(code=ServiceCode.Fee.value)
                         if not Service_Order.objects.filter(customer__pid = customer.pid,product=product_fee, 
                             svalidTo__gte=s_cd['svalidTo'], svalidFrom__lte=s_cd['svalidFrom']).exists(): 
                             spaymthdname = s_cd['paymethod']
@@ -497,7 +496,7 @@ def sb_reorder_all(request,pid, data):
             formset = Product_OrderFormSet(initial=inits)
             s_latest_rec = None
             if data[-2]!=0:
-                s_latest_rec = Service_Order.objects.filter(customer__pid__iexact=pid, product__code=ProductCode.FEE.value).order_by('-id')[0]
+                s_latest_rec = Service_Order.objects.filter(customer__pid__iexact=pid, service__code=ServiceCode.FEE.value).order_by('-id')[0]
                 delta = s_latest_rec.svalidTo - s_latest_rec.svalidFrom
                 endMonth = s_latest_rec.svalidTo + delta
                 if(endMonth.day < monthrange(endMonth.year, endMonth.month)[1]):
@@ -534,7 +533,7 @@ def sb_reorder(request,code,pid):
     if request.POST:
         p_order_form = Product_OrderForm(request.POST)
         checkServiceFee = request.POST.get('chkServiceFee',False)
-        latestsrecs = Service_Order.objects.filter(customer__pid = pid, product__code = ProductCode.FEE.value).order_by('-svalidTo')
+        latestsrecs = Service_Order.objects.filter(customer__pid = pid, service__code = ServiceCode.FEE.value).order_by('-svalidTo')
         latestsvcRec = None
         if len(latestsrecs) > 0:
             latestsvcRec = latestsrecs[0]
@@ -584,7 +583,7 @@ def sb_reorder(request,code,pid):
                     if s_order_form.is_valid():
                         s_cd = s_order_form.cleaned_data
                         ###TODO: Here constrains only include situation... need more precise validation
-                        product_fee = Product.objects.get(code=ProductCode.FEE.value)
+                        product_fee = Product.objects.get(code=ServiceCode.Fee.value)
                         if not Service_Order.objects.filter(customer__pid = customer.pid,product=product_fee, 
                             svalidTo__gte=s_cd['svalidTo'], svalidFrom__lte=s_cd['svalidFrom']).exists(): 
                             spaymthdname = s_cd['paymethod']
@@ -683,7 +682,7 @@ def sb_reorder(request,code,pid):
         p_order_form = Product_OrderForm(initial={'product': product})
         s_order_form = Service_OrderForm()    
 
-        latestsrecs = Service_Order.objects.filter(customer__pid = pid, product__code=ProductCode.FEE.value).order_by('-svalidTo')
+        latestsrecs = Service_Order.objects.filter(customer__pid = pid, service__code=ServiceCode.FEE.value).order_by('-svalidTo')
         latestsvcRec = None
         if len(latestsrecs) > 0:
             latestsvcRec = latestsrecs[0]

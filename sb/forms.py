@@ -151,19 +151,22 @@ class QueryForm(forms.Form):
                              widget=AdminDateWidget({
                                
                                'placeholder':'Date To',}))
-    PN_OPTIONS = (
-        (0, '全部'),
-        (1, '社保'),
-        (2, '公积金'),
-        (4, '个税'),
-        (8, '残保金'),
-    )
+    # PN_OPTIONS = (
+    #     (0, '全部'),
+    #     (1, '社保'),
+    #     (2, '公积金'),
+    #     (4, '个税'),
+    #     (8, '残保金'),
+    #     (1024, '服务费'),
+    # )
     productName = forms.IntegerField(required = False,
-                                widget= forms.Select(choices=PN_OPTIONS))
+                                #widget= forms.Select(choices=PN_OPTIONS)
+                                )
 
     CS_OPTIONS =(
         (0, '不包含减员客户'),
-        (1,'包含减员客户')
+        (1,'包含减员客户'),
+        (2, '仅包含已减员客户')
     )
     customerStatus = forms.IntegerField(required = False,
                             widget= forms.Select(choices=CS_OPTIONS))
@@ -175,9 +178,11 @@ class QueryForm(forms.Form):
     itemType = forms.IntegerField(required=False, 
                             widget=forms.Select(choices=IT_OPTIONS))
 
-    # def __init__(self, *args, **kwargs):
-    #     super(QueryForm,self).__init__(*args, **kwargs)
-        #self.fields['productName'].widget.choices = Product.objects.all().values_list('id','name')
+    def __init__(self, *args, **kwargs):
+        super(QueryForm,self).__init__(*args, **kwargs)
+        pn_choices = [(0, '全部产品'),]
+        pn_choices.extend(Product.objects.all().values_list('id', 'name'))
+        self.fields['productName'].widget = forms.Select(choices=pn_choices)
         #self.fields['customerStatus'].widget.choices = Customer.objects.all().values_list('id','status')    
 
     def clean_name(self):
