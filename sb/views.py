@@ -7,9 +7,10 @@ from django.contrib.auth.decorators import user_passes_test, permission_required
 from django.db import transaction
 from .forms import QueryForm, CustomerForm, Product_OrderForm, Service_OrderForm, OperationQueryForm
 from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, \
-                    Operations, User_extra_info, TodoList
+                    Operations, User_extra_info, TodoList, Service
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, SendPushMessage, getNextMonthRange, BillCheckAllResult, ServiceCode
+from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, SendPushMessage,\
+     getNextMonthRange, BillCheckAllResult, ServiceCode, getServiceMonthRange
 from calendar import monthrange
 from wxpy import Bot
 import os
@@ -127,19 +128,19 @@ def sb_query(request):
                 try:
                     if int(cstatus) == 0: #only contains active clients
                         if int(itemType) == 0:
-                            result = Product_Order.objects.filter(customer__status__gt = 0).order_by('customer__name','-id')
+                            result = Product_Order.objects.filter(customer__status__gt = 0).order_by('-id')
                         else:
-                            result = Service_Order.objects.filter(customer__status__gt = 0).order_by('customer__name','-id')
+                            result = Service_Order.objects.filter(customer__status__gt = 0).order_by('-id')
                     elif int(cstatus)==1:#include all clients
                         if int(itemType) == 0:
-                            result = Product_Order.objects.order_by('customer__name','-id')
+                            result = Product_Order.objects.order_by('-id')
                         else:
-                            result = Service_Order.objects.order_by('customer__name','-id')
+                            result = Service_Order.objects.order_by('-id')
                     else:#only include disabled clients
                         if int(itemType) == 0:
-                            result = Product_Order.objects.filter(customer__status = 0).order_by('customer__name','-id')
+                            result = Product_Order.objects.filter(customer__status = 0).order_by('-id')
                         else:
-                            result = Service_Order.objects.filter(customer__status = 0).order_by('customer__name','-id')
+                            result = Service_Order.objects.filter(customer__status = 0).order_by('-id')
                     
                     if name and len(name.strip()) > 0:
                         result = result.filter(customer__name__icontains=name.strip())
@@ -405,12 +406,15 @@ def sb_reorder_all(request,pid, data):
                         district = District.objects.get(name= dstName)
                         productName = p_cd['product']
                         product = Product.objects.get(name=productName)
-
+                        validTo = p_cd['validTo']
+                        lastDay = monthrange(validTo.year, validTo.month)[1]
+                        if validTo.day < lastDay:
+                            validTo = date(validTo.year, validTo.month, lastDay)
                         p_order, pcreated  = Product_Order.objects.get_or_create(
                                 customer=customer, 
                                 product=product,
                                 validFrom = p_cd['validFrom'],
-                                validTo = p_cd['validTo'],
+                                validTo = validTo,
                                 district = district,
                                 defaults={
                                     'product_base' : p_cd['product_base'],
@@ -435,12 +439,15 @@ def sb_reorder_all(request,pid, data):
                         if not Service_Order.objects.filter(customer__pid = customer.pid,product=product_fee, 
                             svalidTo__gte=s_cd['svalidTo'], svalidFrom__lte=s_cd['svalidFrom']).exists(): 
                             spaymthdname = s_cd['paymethod']
-
+                            svalidTo = s_cd['svalidTo']
+                            lastDay = monthrange(svalidTo.year, svalidTo.month)[1]
+                            if svalidTo.day < lastDay:
+                                svalidTo = date(svalidTo.year, svalidTo.month, svalidTo.day)
                             s_order = Service_Order.objects.create(
                                 customer = customer,
                                 product = product_fee,
                                 svalidFrom = s_cd['svalidFrom'],
-                                svalidTo = s_cd['svalidTo'],
+                                svalidTo = svalidTo,
                                 stotal_price = s_cd['stotal_price'],
                                 paymethod =spaymthdname,
                                 #payaccount = s_cd['payaccount'],
@@ -497,15 +504,11 @@ def sb_reorder_all(request,pid, data):
             s_latest_rec = None
             if data[-2]!=0:
                 s_latest_rec = Service_Order.objects.filter(customer__pid__iexact=pid, service__code=ServiceCode.FEE.value).order_by('-id')[0]
-                delta = s_latest_rec.svalidTo - s_latest_rec.svalidFrom
-                endMonth = s_latest_rec.svalidTo + delta
-                if(endMonth.day < monthrange(endMonth.year, endMonth.month)[1]):
-                    endMonth = date(endMonth.year, endMonth.month, monthrange(endMonth.year, endMonth.month)[1])
-                logger.info(f'last record: {s_latest_rec.svalidFrom} to {s_latest_rec.svalidTo}, new record: {nextMonth[0]}, {endMonth}')
+                nextServiceRange = getServiceMonthRange(pid, ServiceCode.FEE.value)
                 
                 s_order = Service_OrderForm(initial={
-                    'svalidFrom': nextMonth[0], 
-                    'svalidTo': endMonth,
+                    'svalidFrom': nextServiceRange[0], 
+                    'svalidTo': nextServiceRange[1],
                     'paymethod': s_latest_rec.paymethod,
                     'stotal_price': s_latest_rec.stotal_price, 
                 })
@@ -533,6 +536,7 @@ def sb_reorder(request,code,pid):
     if request.POST:
         p_order_form = Product_OrderForm(request.POST)
         checkServiceFee = request.POST.get('chkServiceFee',False)
+        logger.info(checkServiceFee)
         latestsrecs = Service_Order.objects.filter(customer__pid = pid, service__code = ServiceCode.FEE.value).order_by('-svalidTo')
         latestsvcRec = None
         if len(latestsrecs) > 0:
@@ -543,20 +547,20 @@ def sb_reorder(request,code,pid):
         if p_order_form.is_valid():
             p_cd = p_order_form.cleaned_data
             try:
-                # productName = p_cd['product']
-                # product = Product.objects.get(name = productName)
-
-                paymthdname = p_cd['paymethod']
-                paymtd = paymthdname#PayMethod.objects.get(name=paymthdname)
-
+                paymtd = p_cd['paymethod']
                 dstName = p_cd['district']
                 district = District.objects.get(name= dstName)
+
+                validTo = p_cd['validTo']
+                lastDay = monthrange(validTo.year, validTo.month)[1]
+                if validTo.day < lastDay:
+                    validTo = date(validTo.year, validTo.month, lastDay)
 
                 p_order, pcreated  = Product_Order.objects.get_or_create(
                         customer=customer, 
                         product=product,
                         validFrom = p_cd['validFrom'],
-                        validTo = p_cd['validTo'],
+                        validTo = validTo,
                         district = district,
                         defaults={
                             'product_base' : p_cd['product_base'],
@@ -570,32 +574,35 @@ def sb_reorder(request,code,pid):
                 op = Operations(customer = customer,
                                             product = product,
                                             operation = CustomerOperations.REORDER.value)
-                logger.info('add info to Todolist in reorder.')
+
                 if p_cd['note']:
+                    logger.info(f'add {p_cd["note"]} to Todolist in reorder.')
                     ptodo, created = TodoList.objects.get_or_create(
                         info = p_cd['note'],
                         isfinished = False
                     )
                     
-                if not checkServiceFee:
+                if not checkServiceFee and 'stotal_price' in request.POST: #make sure Service_order form does exist
                     #check whether service order exists.
                     s_order_form = Service_OrderForm(request.POST)
                     if s_order_form.is_valid():
                         s_cd = s_order_form.cleaned_data
                         ###TODO: Here constrains only include situation... need more precise validation
-                        product_fee = Product.objects.get(code=ServiceCode.Fee.value)
-                        if not Service_Order.objects.filter(customer__pid = customer.pid,product=product_fee, 
+                        service_fee = Service.objects.get(code=ServiceCode.FEE.value)
+                        if not Service_Order.objects.filter(customer__pid = customer.pid,service=service_fee, 
                             svalidTo__gte=s_cd['svalidTo'], svalidFrom__lte=s_cd['svalidFrom']).exists(): 
                             spaymthdname = s_cd['paymethod']
-                            spaymtd = spaymthdname#PayMethod.objects.get(name=paymthdname)
-
+                            svalidTo = s_cd['svalidTo']
+                            lastDay = monthrange(svalidTo.year, svalidTo.month)[1]
+                            if svalidTo.day < lastDay:
+                                svalidTo = date(svalidTo.year, svalidTo.month, svalidTo.day)
                             s_order = Service_Order.objects.create(
                                 customer = customer,
-                                product = product_fee,
+                                service = service_fee,
                                 svalidFrom = s_cd['svalidFrom'],
-                                svalidTo = s_cd['svalidTo'],
+                                svalidTo = svalidTo,
                                 stotal_price = s_cd['stotal_price'],
-                                paymethod =spaymtd,
+                                paymethod =spaymthdname,
                                 #payaccount = s_cd['payaccount'],
                                 partner = s_cd['partner'],
                                 sprice2Partner = s_cd['sprice2Partner'],
@@ -604,9 +611,10 @@ def sb_reorder(request,code,pid):
                                 snote = s_cd['snote']
                             )
                             #s_order.save()
-                            customer.status = customer.status | product.code
+                            customer.status |=  product.code
 
                             if s_cd['snote']:
+                                logger.info(f'add {s_cd["snote"]} to Todolist in reorder.')
                                 stodo,created = TodoList.objects.get_or_create(
                                 info = s_cd['snote'],
                                 isfinished = False
@@ -646,7 +654,7 @@ def sb_reorder(request,code,pid):
                             })
                     
                 else:
-                    customer.status = customer.status | product.code
+                    customer.status |=  product.code
                     with transaction.atomic():    
                         p_order.save()
                         op.save()
@@ -679,23 +687,54 @@ def sb_reorder(request,code,pid):
                                 
                                 })
     else:
-        p_order_form = Product_OrderForm(initial={'product': product})
-        s_order_form = Service_OrderForm()    
+        p_order = Product_Order.objects.filter(product__code=code, customer__pid__iexact=pid).order_by('-id')[0]
+        nextMonth = getNextMonthRange()
+        if p_order.validFrom<= nextMonth[0] and p_order.validTo>= nextMonth[1]: #already paid next month
+            p_order_form = Product_OrderForm(initial={
+            'product': product,
+            'product_base': p_order.product_base,
+            'validFrom': p_order.validFrom,
+            'validTo': p_order.validTo,
+            'total_price': p_order.total_price,
+            'paymethod': p_order.paymethod,
+            })
+        else:
+            p_order_form = Product_OrderForm(initial={
+                'product': product,
+                'product_base': p_order.product_base,
+                'validFrom': nextMonth[0],
+                'validTo': nextMonth[1],
+                'total_price': p_order.total_price,
+                'paymethod': p_order.paymethod,
+                })
 
         latestsrecs = Service_Order.objects.filter(customer__pid = pid, service__code=ServiceCode.FEE.value).order_by('-svalidTo')
         latestsvcRec = None
         if len(latestsrecs) > 0:
             latestsvcRec = latestsrecs[0]
+
+        if latestsvcRec:
+            if not latestsrecs.filter(svalidFrom__lte=nextMonth[0], svalidTo__gte=nextMonth[1]).exists():
+                nextServiceRange = getServiceMonthRange(pid, ServiceCode.FEE.value)
+                s_order_form = Service_OrderForm(initial={
+                    'svalidFrom': nextServiceRange[0], 
+                    'svalidTo': nextServiceRange[1],
+                    'stotal_price': latestsvcRec.stotal_price,
+                    'paymethod': latestsvcRec.paymethod,
+                })
+            else:
+                s_order_form = None
+        else:
+            s_order_form = Service_OrderForm()    
         
         return render(request, 'sb/sb_reorder.html',
-                    {
-                        'title': '{}续费'.format(product.name),
-                        'customer':customer,
-                        'p_order_form': p_order_form,
-                        's_order_form': s_order_form,
-                        'latestsvcRec': latestsvcRec,
-                        
-                        })
+        {
+            'title': '{}续费'.format(product.name),
+            'customer':customer,
+            'p_order_form': p_order_form,
+            's_order_form': s_order_form,
+            'latestsvcRec': latestsvcRec,                        
+            })
 
 
 @user_passes_test(lambda u: u.is_superuser, login_url='/login/')
@@ -903,7 +942,7 @@ def export_billcheckAll_csv_thread(request, rst_list):
         with open(os.path.join(settings.STATICFILES_DIRS[0],'HYHR/{}'.format(filename)), 'w', encoding='utf-8-sig', newline='') as f:
             writer = csv.writer(f) 
             
-            #writer.writerow(['姓名', '身份证号', '手机号','微信', '业务名称', '所在区县','户口性质','基数','状态'])
+            writer.writerow(['姓名', '社保', '公积金','个税', '残保金','服务费', '总数'])
             for rst in rst_list:               
                 item = [rst.customer.name]
                 item.extend(rst.records)
@@ -1180,7 +1219,8 @@ def export_csv(request, path):
         except IOError as ex:
             return HttpResponse(ex)
         response    = HttpResponse(wrapper,content_type='application/octet-stream')
-        response['Content-Disposition'] = 'attachment; filename=%s' % os.path.basename(file_route)
+        baseName = os.path.basename(file_route).split('.')
+        response['Content-Disposition'] = f'attachment; filename={baseName[0]}{datetime.now()}.{baseName[1]}' 
         response['Content-Length']      = os.path.getsize(file_route)
         return response
     else:

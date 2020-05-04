@@ -1,7 +1,7 @@
 from datetime import date
 from calendar import monthrange
 from enum import Enum,unique
-from sb.models import Customer
+from sb.models import Customer, Service_Order
 from wxpy import *
 from django.db import models
 from io import StringIO
@@ -11,6 +11,9 @@ from collections import OrderedDict
 from django.conf import settings
 import os
 import platform
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @unique
@@ -56,6 +59,16 @@ def getNextMonthRange(dt = date.today()):
         end = date(today.year+1, 1, 31)
     return (begin, end)
 
+def getServiceMonthRange(pid, code):
+    s_latest_rec = Service_Order.objects.filter(customer__pid__iexact=pid, service__code=code).order_by('-id')[0]
+    delta = s_latest_rec.svalidTo - s_latest_rec.svalidFrom
+    endMonth = s_latest_rec.svalidTo + delta
+    if(endMonth.day < monthrange(endMonth.year, endMonth.month)[1]):
+        endMonth = date(endMonth.year, endMonth.month, monthrange(endMonth.year, endMonth.month)[1])
+    nextMonth = getNextMonthRange()
+    endMonth = endMonth if endMonth>= nextMonth[1] else nextMonth[1]
+    logger.info(f'last service record: {s_latest_rec.svalidFrom} to {s_latest_rec.svalidTo}, new service record: {nextMonth[0]}, {endMonth}')
+    return (nextMonth[0],endMonth)
 
 def getWXCachePath(sesskey):
     return os.path.join(settings.WXPYCACHE_DIR, '{}.pkl'.format(sesskey))
