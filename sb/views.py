@@ -228,129 +228,118 @@ def sb_add(request, code):
             p_cd = p_order_form.cleaned_data
             s_cd = s_order_form.cleaned_data
             try:
+                
+                existedCuStatus = int(code)
+                customer, created = Customer.objects.get_or_create(
+                    pid = c_cd['pid'],
+                    defaults = {
+                        'name' : c_cd['name'],
+                        'phone' : c_cd['phone'],
+                        'hukou' : c_cd['hukou'],
+                        'status': code,
+                        'wechat' : c_cd['wechat'],
+                        'introducer' : c_cd['introducer'],
+                        'note' : c_cd['note']
+                    },
+                )
+                if not created:#if customer already exists, add the new status to it
+                    if customer.name != c_cd['name']:
+                        return render(request, 'sb/sb_add.html',
+                        {
+                            'title':title,
+                            'customer_form':customer_form,
+                            'p_order_form': p_order_form,
+                            's_order_form': s_order_form,
+                            'dup_pid_error':'错误:已经存在身份证号为{}的客户,但姓名不为{}, 请重新确认填写的身份证号是否正确.'.format(c_cd['pid'], c_cd['name']),
+                                    
+                        })  
+                    customer.status |= existedCuStatus
+                    existedCuStatus = customer.status  
+                
+                otName = p_cd['orderType']
+                ordertype = OrderType.objects.get(name=otName)
+
+                dstName = p_cd['district']
+                district = District.objects.get(name=dstName)
+                paymtdName = p_cd['paymethod']
+
+                p_order, created = Product_Order.objects.get_or_create(
+                    customer=customer, 
+                    product=product,
+                    district = district,
+                    validFrom = p_cd['validFrom'],
+                    validTo = p_cd['validTo'],
+                    defaults={
+                        'orderType' : ordertype,
+                        'paymethod' : paymtdName,    
+                        'product_base' : p_cd['product_base'],
+                        'total_price' : p_cd['total_price'],
+                        #'payaccount' : p_cd['payaccount'],
+                        #'orderDate' : p_cd['orderDate'],
+                        'note' : p_cd['note']
+                    },
+                )
+                if not created and existedCuStatus != CustomerStatusCode.Disabled.value:
+                    return render(request, 'sb/sb_add.html',
+                    {
+                        'title':title,
+                        'customer_form':customer_form,
+                        'p_order_form': p_order_form,
+                        's_order_form': s_order_form,
+                        'dup_date_error':'错误:此时间段已经存在{}订单.'.format(product.name),
+                                
+                    })
+                if p_cd['note']:
+                    ptodo, created = TodoList.objects.get_or_create(
+                        info = p_cd['note'],
+                        isfinished = False
+                    )
+                service = Service.objects.get(code=ServiceCode.FEE.value)
+                s_order, created = Service_Order.objects.get_or_create(
+                    customer = customer,
+                    service = service,
+                    svalidFrom = s_cd['svalidFrom'],
+                    svalidTo = s_cd['svalidTo'], 
+                    defaults={
+                        'stotal_price': s_cd['stotal_price'], 
+                        'sprice2Partner': s_cd['sprice2Partner'],
+                        'snote' : s_cd['snote'],
+                        'paymethod' : s_cd['paymethod'],
+                        #'payaccount' : s_cd['payaccount'],
+                        #'orderDate' : p_cd['orderDate'],
+                        'partner': s_cd['partner'],
+                    },
+                )
+
+                if not created and existedCuStatus != CustomerStatusCode.Disabled.value:
+                    return render(request, 'sb/sb_add.html',
+                    {
+                        'title':title,
+                        'customer_form':customer_form,
+                        'p_order_form': p_order_form,
+                        's_order_form': s_order_form,
+                        'dup_sdate_error':'错误:此时间段已经存在{}订单.'.format(service.name),
+                                
+                    })
+                if s_cd['snote']:
+                    stodo,created = TodoList.objects.get_or_create(
+                        info = s_cd['snote'],
+                        isfinished = False
+                    )
+
+                #add info to operations table
+                op = Operations(customer = customer, 
+                                product = product,
+                                operation = CustomerOperations.ADD.value )
+                
                 with transaction.atomic():
-                    #use the product from id, ignore what is selected.
-                    statusvalue = CustomerStatusCode.Disabled
-                    if product.code == ProductCode.SB.value:#sb
-                        statusvalue = CustomerStatusCode.SB
-                    elif product.code == ProductCode.GJJ.value:#gjj
-                        statusvalue = CustomerStatusCode.GJJ
-                    elif product.code == ProductCode.GS.value:
-                        statusvalue = CustomerStatusCode.GS
-
-                    existedCuStatus = statusvalue.value
-
-                    customer, created = Customer.objects.get_or_create(
-                        pid = c_cd['pid'],
-                        defaults = {
-                            'name' : c_cd['name'],
-                            'phone' : c_cd['phone'],
-                            'hukou' : c_cd['hukou'],
-                            'status': statusvalue.value,
-                            'wechat' : c_cd['wechat'],
-                            'introducer' : c_cd['introducer'],
-                            'note' : c_cd['note']
-                        },
-                    )
-                    if not created:#if customer already exists, add the new status to it
-                        if customer.name != c_cd['name']:
-                            return render(request, 'sb/sb_add.html',
-                            {
-                                    'title':title,
-                                    'customer_form':customer_form,
-                                    'p_order_form': p_order_form,
-                                    's_order_form': s_order_form,
-                                    'dup_pid_error':'错误:已经存在身份证号为{},姓名为{}的客户, 请重新确认填写的身份证号是否正确.'.format(c_cd['pid'], customer.name),
-                                        
-                            })
-                        existedCuStatus = customer.status    
-                        newStaValue = customer.status | statusvalue.value
-                        customer.status = newStaValue
-                        #customer.save()
-                    
-                    otName = p_cd['orderType']
-                    ordertype = OrderType.objects.get(name=otName)
-
-                    dstName = p_cd['district']
-                    district = District.objects.get(name=dstName)
-
-                    paymtdName = p_cd['paymethod']
-                    paymtd = paymtdName#PayMethod.objects.get(name=paymtdName)
-
-                    p_order, created = Product_Order.objects.get_or_create(
-                        customer=customer, 
-                        product=product,
-                        district = district,
-                        validFrom = p_cd['validFrom'],
-                        validTo = p_cd['validTo'],
-                        defaults={
-                            'orderType' : ordertype,
-                            'paymethod' : paymtd,    
-                            'product_base' : p_cd['product_base'],
-                            'total_price' : p_cd['total_price'],
-                            #'payaccount' : p_cd['payaccount'],
-                            #'orderDate' : p_cd['orderDate'],
-                            'note' : p_cd['note']
-                        },
-                    )
-                    if not created and existedCuStatus != CustomerStatusCode.Disabled.value:
-                        return render(request, 'sb/sb_add.html',
-                            {
-                                    'title':title,
-                                    'customer_form':customer_form,
-                                    'p_order_form': p_order_form,
-                                    's_order_form': s_order_form,
-                                    'dup_date_error':'错误:此时间段已经存在{}订单.'.format(product.name),
-                                        
-                            })
-
-                    s_order, created = Service_Order.objects.get_or_create(
-                        customer = customer,
-                        product = product,
-                        svalidFrom = s_cd['svalidFrom'],
-                        svalidTo = s_cd['svalidTo'], 
-                        defaults={
-                            'stotal_price': s_cd['stotal_price'], 
-                            'sprice2Partner': s_cd['sprice2Partner'],
-                            'snote' : s_cd['snote'],
-                            'paymethod' : s_cd['paymethod'],
-                            #'payaccount' : s_cd['payaccount'],
-                            #'orderDate' : p_cd['orderDate'],
-                            'partner': s_cd['partner'],
-                        },
-                    )
-
-                    if not created and existedCuStatus != CustomerStatusCode.Disabled.value:
-                        return render(request, 'sb/sb_add.html',
-                            {
-                                    'title':title,
-                                    'customer_form':customer_form,
-                                    'p_order_form': p_order_form,
-                                    's_order_form': s_order_form,
-                                    'dup_sdate_error':'错误:此时间段已经存在{}订单.'.format(product.name),
-                                        
-                            })
-                    #add info to operations table
-                    op = Operations(customer = customer, 
-                                    product = product,
-                                    operation = CustomerOperations.ADD.value )
                     op.save()
                     customer.save()
-
-                    logger.info('add info to Todolist.')
-                    if p_cd['note']:
-                        ptodo, created = TodoList.objects.get_or_create(
-                            info = p_cd['note'],
-                            isfinished = False
-                        )
-                        ptodo.save()
-                    if s_cd['snote']:
-                        stodo,created = TodoList.objects.get_or_create(
-                            info = s_cd['snote'],
-                            isfinished = False
-                        )
-                        stodo.save()
-
+                    ptodo.save()
+                    stodo.save()
+                    p_order.save()
+                    s_order.save()
+                    
             except Exception as ex:
                 return render(request, 'HYHR/error.html',
                 {
@@ -373,9 +362,19 @@ def sb_add(request, code):
                   })
     else:
         customer_form = CustomerForm()
-        p_order_form = Product_OrderForm(initial={'product': product})
+        today = date.today()
+        startDate = date(today.year, today.month, 1)
+        endDate = date(today.year, today.month, monthrange(today.year, today.month)[1])
+        p_order_form = Product_OrderForm(initial={
+            'product': product,
+            'validFrom': startDate,
+            'validTo': endDate
+            })
         
-        s_order_form = Service_OrderForm()
+        s_order_form = Service_OrderForm(initial={
+            'svalidFrom': startDate,
+            'svalidTo': endDate,
+        })
         return render(request, 'sb/sb_add.html',
                   {
                         'title': title,
@@ -426,6 +425,18 @@ def sb_reorder_all(request,pid, data):
                                 },)
                         
                         records.append(p_order)
+                        op = Operations(customer = customer,
+                                            product = product,
+                                            operation = CustomerOperations.REORDER.value)
+                        records.append(op)
+
+                        if p_cd['note']:
+                            logger.info(f'add {p_cd["note"]} to Todolist in reorder.')
+                            ptodo, created = TodoList.objects.get_or_create(
+                                info = p_cd['note'],
+                                isfinished = False
+                            ) 
+                            records.append(ptodo)
                     else:
                         raise Exception(form.errors)
                 
@@ -435,8 +446,8 @@ def sb_reorder_all(request,pid, data):
                     if s_order_form.is_valid():
                         s_cd = s_order_form.cleaned_data
                         ###TODO: Here constrains only include situation... need more precise validation
-                        product_fee = Product.objects.get(code=ServiceCode.Fee.value)
-                        if not Service_Order.objects.filter(customer__pid = customer.pid,product=product_fee, 
+                        service_fee = Service.objects.get(code=ServiceCode.FEE.value)
+                        if not Service_Order.objects.filter(customer__pid = customer.pid,service=service_fee, 
                             svalidTo__gte=s_cd['svalidTo'], svalidFrom__lte=s_cd['svalidFrom']).exists(): 
                             spaymthdname = s_cd['paymethod']
                             svalidTo = s_cd['svalidTo']
@@ -445,7 +456,7 @@ def sb_reorder_all(request,pid, data):
                                 svalidTo = date(svalidTo.year, svalidTo.month, svalidTo.day)
                             s_order = Service_Order.objects.create(
                                 customer = customer,
-                                product = product_fee,
+                                service = service_fee,
                                 svalidFrom = s_cd['svalidFrom'],
                                 svalidTo = svalidTo,
                                 stotal_price = s_cd['stotal_price'],
@@ -456,13 +467,37 @@ def sb_reorder_all(request,pid, data):
                                 #orderDate = p_cd['orderDate'],
                                 snote = s_cd['snote']
                             )
+                            
+                            if s_cd['snote']:
+                                logger.info(f'add {s_cd["snote"]} to Todolist in reorder.')
+                                stodo,created = TodoList.objects.get_or_create(
+                                info = s_cd['snote'],
+                                isfinished = False
+                                )
+                                records.append(stodo)
                     
+                            with transaction.atomic():
+                                for order in records:
+                                    if not hasattr(order, 'product'):
+                                        order.save()
+                                        continue
+                                    code = order.product.code
+                                    customer.status |= code
+                                    order.save()
+                                s_order.save()
+                            return render(request, 'sb/reorder_success.html',
+                            {
+                                'title':'{}续费成功!'.format(product.name),
+                            })
+                        else: #client has paid serivce fee
                             with transaction.atomic():
                                 for order in records:
                                     code = order.product.code
                                     customer.status |= code
                                     order.save()
-                                s_order.save()
+                                op.save()
+                                if p_cd['note']:
+                                    ptodo.save()
                             return render(request, 'sb/reorder_success.html',
                             {
                                 'title':'{}续费成功!'.format(product.name),
@@ -473,6 +508,9 @@ def sb_reorder_all(request,pid, data):
                 else:
                     with transaction.atomic():
                         for order in records:
+                            if not hasattr(order,'product'):
+                                order.save()
+                                continue
                             code = order.product.code
                             customer.status |= code
                             order.save()
@@ -643,15 +681,15 @@ def sb_reorder(request,code,pid):
                                 })
                     else:
                         return render(request, 'sb/sb_reorder.html',
-                            {
-                                'title': '{}续费'.format(product.name),
-                                'customer':customer,
-                                'p_order_form': p_order_form,
-                                's_order_form': s_order_form,
-                                'latestsvcRec': latestsvcRec,
-                                'chkServiceFee':chk,
-                                
-                            })
+                        {
+                            'title': '{}续费'.format(product.name),
+                            'customer':customer,
+                            'p_order_form': p_order_form,
+                            's_order_form': s_order_form,
+                            'latestsvcRec': latestsvcRec,
+                            'chkServiceFee':chk,
+                            
+                        })
                     
                 else:
                     customer.status |=  product.code
@@ -677,15 +715,15 @@ def sb_reorder(request,code,pid):
         else:
             s_order_form = Service_OrderForm(request.POST)            
             return render(request, 'sb/sb_reorder.html',
-                            {
-                                'title': '{}续费'.format(product.name),
-                                'customer':customer,
-                                'p_order_form': p_order_form,
-                                's_order_form': s_order_form,
-                                'latestsvcRec': latestsvcRec,
-                                'chkServiceFee':chk,
-                                
-                                })
+            {
+                'title': '{}续费'.format(product.name),
+                'customer':customer,
+                'p_order_form': p_order_form,
+                's_order_form': s_order_form,
+                'latestsvcRec': latestsvcRec,
+                'chkServiceFee':chk,
+                
+                })
     else:
         p_order = Product_Order.objects.filter(product__code=code, customer__pid__iexact=pid).order_by('-id')[0]
         nextMonth = getNextMonthRange()
@@ -854,8 +892,12 @@ def sb_remove_id(request,code, pid):
             else:
                 logger.info('{}-{}'.format(customer.status, code))
                 customer.status ^=product.code
-                if product.code == ProductCode.SB.value and customer.status& ProductCode.CBJ.value == ProductCode.CBJ.value :
-                    customer.status ^= ProductCode.CBJ.value
+                if product.code == ProductCode.SB.value:
+                    logging.info(f'try to remove sb of {customer.name}, you will also remove gs and gjj status.')
+                    if customer.status& ProductCode.CBJ.value == ProductCode.CBJ.value :
+                        customer.status ^= ProductCode.CBJ.value
+                    if customer.status& ProductCode.GS.value == ProductCode.GS.value:
+                        customer.status ^= ProductCode.GS.value
 
                 logger.info(customer.status)
                 with transaction.atomic():
@@ -1025,9 +1067,6 @@ def sb_billcheck_all(request):
             'porders': rst,
             'pagecount': pagecount,
         }) 
-
-            
-
     except Exception as ex:
         logger.error(f'exception ocurred in billcheck_all, {ex}')
         return render(request, 'HYHR/error.html', {'errormessage': ex,})
