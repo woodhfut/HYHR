@@ -132,7 +132,7 @@
                                 <span class="glyphicon glyphicon-cog">实用工具<b class="caret"></b>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="{% url 'sb:wechatbroadcast' %}"><span class="glyphicon glyphicon-qrcode"></span>微信通知</a> </li>
+                            <li><a href="{% url 'sb:wechatbroadcast_ws' %}"><span class="glyphicon glyphicon-qrcode"></span>微信通知</a> </li>
                             {% if user.is_authenticated and user.is_superuser %}
                             <li><a href="{% url 'sb:sb_partnerbillcheck' %}"><span class="glyphicon glyphicon-certificate"></span>合伙人结账</a> </li>
                             <li><a href="{% url 'sb:sb_todolist_add' %}"><span class="glyphicon glyphicon-tasks"></span>新增待办事宜</a> </li>                          

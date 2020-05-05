@@ -113,7 +113,6 @@ def sb_query(request):
             
             if not request.user.is_superuser:
                 uei = User_extra_info.objects.filter(username=request.user.username)
-                logger.info(uei.exists())
                 if not uei.exists():
                     raise Exception(f'当前用户{request.user.username}没有权限执行该操作！')
                 name = uei.realname
@@ -230,8 +229,7 @@ def sb_add(request, code):
             c_cd = customer_form.cleaned_data
             p_cd = p_order_form.cleaned_data
             s_cd = s_order_form.cleaned_data
-            try:
-                
+            try:   
                 existedCuStatus = int(code)
                 customer, created = Customer.objects.get_or_create(
                     pid = c_cd['pid'],
@@ -338,8 +336,10 @@ def sb_add(request, code):
                 with transaction.atomic():
                     op.save()
                     customer.save()
-                    ptodo.save()
-                    stodo.save()
+                    if p_cd['note']:
+                        ptodo.save()
+                    if s_cd['snote']:
+                        stodo.save()
                     p_order.save()
                     s_order.save()
                     
@@ -932,15 +932,9 @@ def getbillcheckCustomers(code):
     month = datetime.now().month
     product = Product.objects.get(code=code)
     
-    cscode = CustomerStatusCode.Disabled
-    if product.code == ProductCode.SB.value:
-        cscode = CustomerStatusCode.SB
-    elif product.code == ProductCode.GJJ.value:
-        cscode = CustomerStatusCode.GJJ
-    elif product.code == ProductCode.GS.value:
-        cscode = CustomerStatusCode.GS
+    cscode = int(code)
 
-    customers =[c for c in Customer.objects.filter(status__gt = CustomerStatusCode.Disabled.value) if c.status & cscode.value == cscode.value]
+    customers =[c for c in Customer.objects.filter(status__gt = CustomerStatusCode.Disabled.value) if c.status & cscode == cscode]
 
     if len(customers):
         today = date.today()
@@ -1232,8 +1226,7 @@ def sb_pushclient(request, code):
                     wxpybot = None
                     return render(request, 'sb/pushclient.html',
                     {
-                        'title': '发送微信信息',                   
-                        
+                        'title': '发送微信信息',                                          
                         'result' : result[1]
                     })
         else:   

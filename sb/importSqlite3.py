@@ -9,24 +9,24 @@ cur = db.cursor()
 names = {}
 df = pd.read_excel('book.xlsx')
 
-# for  row in df.values:
-#     #customer info
-#     name = row[7]
-#     if name in names:
-#         continue
-#     pid = row[8]
+for  row in df.values:
+    #customer info
+    name = row[7].strip()
+    if name in names:
+        continue
+    pid = row[8].strip()
     
-#     phone = str(row[9])[0:11] if not pd.isnull(row[9]) else ''
-#     hukou = 'N' if row[11] in [1629.17, 703.26] else 'C'
-#     status = 3 if not pd.isnull(row[12]) else 1
-#     note = str(row[16])
-#     if note and  '个税' in note:
-#         status |=4
-#     if not pd.isnull(row[15]):
-#         status |=8
-#     print(f'{name} {pid} {phone} {hukou} {status} {row[12]} {note}')
-#     cur.execute(f'insert into sb_customer("name", "pid", "phone", "hukou", "status") values("{name}", "{pid}", "{phone}", "{hukou}","{status}")')
-#     names[name]= name
+    phone = str(row[9])[0:11] if not pd.isnull(row[9]) else ''
+    hukou = 'N' if row[11] in [1629.17, 703.26] else 'C'
+    status = 3 if not pd.isnull(row[12]) else 1
+    note = str(row[16])
+    if note and  '个税' in note:
+        status |=4
+    if not pd.isnull(row[15]):
+        status |=8
+    print(f'{name} {pid} {phone} {hukou} {status} {row[12]} {note}')
+    cur.execute(f'insert into sb_customer("name", "pid", "phone", "hukou", "status") values("{name}", "{pid}", "{phone}", "{hukou}","{status}")')
+    names[name]= name
 
 orders = {}
 serivces = {}
