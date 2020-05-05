@@ -12,7 +12,7 @@
 		<label for="name" class="col-sm-2 control-label">合伙人姓名：</label>
 		<div class="col-sm-4">
 			<input type="text" class="form-control" id="name" name="name" value="{{pname}}"
-				   placeholder="请输入名字">
+				   placeholder="请合伙人输入名字">
         </div>
 	</div>
     {% if error %}
@@ -62,7 +62,6 @@
                 <th><input type="checkbox" id="checkall" name="checkall"/>已付款</th>
                 <th>合伙人姓名</th>
                 <th>客户姓名</th>
-                <th>业务</th>
                 <th>订单开始时间</th>
                 <th>订单结束时间</th>
                 <th>订单日期</th>
@@ -75,7 +74,6 @@
                     <td><input type="checkbox"  name="subcheckboxes" value="{{record.id}}" class="subcheckbox"/></td>
                     <td>{{record.partner.name}}</td>
                     <td>{{record.customer.name}}</td>
-                    <td>{{record.product.name}}</td>
                     <td>{{record.svalidFrom}}</td>
                     <td>{{record.svalidTo}}</td>
                     <td>{{record.orderDate}}</td>

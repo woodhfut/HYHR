@@ -21,7 +21,7 @@ import multiprocessing
 import time
 import csv
 from wsgiref.util import FileWrapper
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Q
 from django.forms import formset_factory
 import uuid
 from django.views import View
@@ -112,7 +112,10 @@ def sb_query(request):
                 collapse = 1
             
             if not request.user.is_superuser:
-                uei = User_extra_info.objects.get(username=request.user.username)
+                uei = User_extra_info.objects.filter(username=request.user.username)
+                logger.info(uei.exists())
+                if not uei.exists():
+                    raise Exception(f'当前用户{request.user.username}没有权限执行该操作！')
                 name = uei.realname
                 pid = uei.pid
 
@@ -1391,7 +1394,7 @@ def sb_partnerbillcheck(request):
 
             return HttpResponseRedirect('./?next=/&name={}'.format(pname))
         else:
-            pname = request.GET.get('name', 'first')
+            pname = request.GET.get('name', 'first')#FIRST TIME ENTER THE PAGE, WE DON'T SHOW ANYTHING.
             if pname and pname !='first':
                 pexists = Partner.objects.filter(name=pname).exists()
                 if not pexists:
@@ -1421,14 +1424,22 @@ def sb_partnerbillcheck(request):
                 return render(request, 'sb/partnerbillcheck.html') 
                    
             else:
-                srecords = Service_Order.objects.exclude(sprice2Partner=0).order_by('partner__name', '-id')
+                srecords = Service_Order.objects.exclude(Q(sprice2Partner=0)| Q(partner__name=None)).order_by('partner__name', '-id')
                 #summary = Service_Order.objects.raw('select id, partner_id, sum(sprice2Partner) from sb_Service_Order where sprice2Partner <> 0 group by partner_id')
-                summary = Service_Order.objects.exclude(sprice2Partner=0).values('partner__name').annotate(Sum('sprice2Partner'))
-                return render(request, 'sb/partnerbillcheck.html',
-                {
-                    'srecords': srecords,
-                    'summary': summary,
-                })     
+                summary = Service_Order.objects.exclude(Q(sprice2Partner=0) | Q(partner__name=None)).values('partner__name').annotate(Sum('sprice2Partner'))
+                if not srecords.exists():
+                    return render(request, 'sb/partnerbillcheck.html',
+                    {
+                        'error': '已结清与所有合伙人的费用.',
+                        'pname': pname,
+
+                    })
+                else:
+                    return render(request, 'sb/partnerbillcheck.html',
+                    {
+                        'srecords': srecords,
+                        'summary': summary,
+                    })     
                      
     except Exception as ex:
         return render(request, 'HYHR/error.html',

@@ -9,7 +9,7 @@
 {%endblock%}
 {% block content %}
 <h2>{{title}}</h2>
-<p>成功{{pname}}减员<b>{{cname}}({{cpid}})</b>.</p>
+<p class="success">成功{{pname}}减员<b>{{cname}}({{cpid}})</b>.</p>
 <p>返回 <a href="{% url 'home' %}">首页</a> 或者继续 <a href="/sb/remove/{{code}}">继续减员</a></p>
 
 {% endblock %}

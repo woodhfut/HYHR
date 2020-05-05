@@ -1,9 +1,20 @@
 {% extends 'HYHR/layout.html' %}
 
+{% block styles%}
+<style type="text/css">
+ .error
+ {
+     color:red;
+     font-weight: bold;
+     font-style: italic;
+     padding-left: 20px;
+ }
+</style>
+{%endblock%}
 {% block content %}
-<h2>出错了！</h2>
-<p>请保存一下信息，并联系管理员。</p>
-<p>{{errormessage}}.</p>
+<h2>😭😭😭出错了！</h2>
+<p>请保存以下信息，并联系管理员。</p>
+<p class="error">{{errormessage}}.</p>
 <p>返回 <a href="{% url 'home' %}">首页</a></p>
 
 {% endblock %}
