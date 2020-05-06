@@ -139,12 +139,23 @@ class District(models.Model):
         verbose_name = '所属区县'
         verbose_name_plural = verbose_name
 
+class Company(models.Model):
+    name = models.CharField(max_length=50, verbose_name='公司名称')
+    district = models.ForeignKey(District, on_delete = models.CASCADE, default = 1, verbose_name='所属区县')
+
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name = '代理公司'
+        verbose_name_plural = verbose_name
+
 class Product_Order(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, verbose_name='客户姓名')
     product = models.ForeignKey(Product, on_delete = models.CASCADE, verbose_name='产品名称')
     orderType = models.ForeignKey(OrderType, on_delete= models.CASCADE, default = 1, verbose_name='订单类型')
     district = models.ForeignKey(District, on_delete = models.CASCADE, default = 1, verbose_name='所属区县')
-
+    company = models.ForeignKey(Company, on_delete= models.CASCADE, default=1, verbose_name='所属公司')
     product_base = models.FloatField(verbose_name='产品基数')
     validFrom = models.DateField(verbose_name='起始日期')
     validTo = models.DateField(verbose_name='截至日期')
