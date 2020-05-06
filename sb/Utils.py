@@ -48,6 +48,20 @@ class BillCheckAllResult:
         self.customer = customer
         self.records = records
         
+def getPreviousMonthRange(dt = date.today()):
+    today = dt
+    if today.month > 1:
+        begin = date(today.year, today.month-1, 1)
+        end = date(today.year, today.month-1, monthrange(today.year, today.month-1)[1])
+    else:
+        begin = date(today.year-1, 12, 1)
+        end = date(today.year-1, 12, 31)
+    return (begin, end)
+
+def getCurrentMonthRange():
+    today = date.today()
+    return (date(today.year, today.month, 1), date(today.year, today.month, monthrange(today.year, today.month)[1]))
+
 
 def getNextMonthRange(dt = date.today()):
     today = dt
@@ -65,7 +79,7 @@ def getServiceMonthRange(pid, code):
     endMonth = s_latest_rec.svalidTo + delta
     if(endMonth.day < monthrange(endMonth.year, endMonth.month)[1]):
         endMonth = date(endMonth.year, endMonth.month, monthrange(endMonth.year, endMonth.month)[1])
-    nextMonth = getNextMonthRange()
+    nextMonth = getCurrentMonthRange()
     endMonth = endMonth if endMonth>= nextMonth[1] else nextMonth[1]
     logger.info(f'last service record: {s_latest_rec.svalidFrom} to {s_latest_rec.svalidTo}, new service record: {nextMonth[0]}, {endMonth}')
     return (nextMonth[0],endMonth)

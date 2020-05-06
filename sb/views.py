@@ -10,7 +10,7 @@ from .models import Product_Order, Customer, Product, Service_Order, Partner, Or
                     Operations, User_extra_info, TodoList, Service
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, SendPushMessage,\
-     getNextMonthRange, BillCheckAllResult, ServiceCode, getServiceMonthRange
+     getNextMonthRange, BillCheckAllResult, ServiceCode, getServiceMonthRange, getPreviousMonthRange, getCurrentMonthRange
 from calendar import monthrange
 from wxpy import Bot
 import os
@@ -379,13 +379,13 @@ def sb_add(request, code):
             'svalidTo': endDate,
         })
         return render(request, 'sb/sb_add.html',
-                  {
-                        'title': title,
-                        'customer_form':customer_form,
-                        'p_order_form': p_order_form,
-                        's_order_form': s_order_form,
-                            
-                  })
+        {
+            'title': title,
+            'customer_form':customer_form,
+            'p_order_form': p_order_form,
+            's_order_form': s_order_form,
+                
+        })
 
 
 Product_OrderFormSet = formset_factory(Product_OrderForm, extra=0, max_num=4)
@@ -526,7 +526,7 @@ def sb_reorder_all(request,pid, data):
         else:
             inits = []
             s_order = None
-            nextMonth = getNextMonthRange()
+            nextMonth = getCurrentMonthRange()
             
             for i in range(len(data)-2): #-1 is total value, -2 is fee.
                 if data[i] !=0:
@@ -729,7 +729,7 @@ def sb_reorder(request,code,pid):
                 })
     else:
         p_order = Product_Order.objects.filter(product__code=code, customer__pid__iexact=pid).order_by('-id')[0]
-        nextMonth = getNextMonthRange()
+        nextMonth = getCurrentMonthRange()
         if p_order.validFrom<= nextMonth[0] and p_order.validTo>= nextMonth[1]: #already paid next month
             p_order_form = Product_OrderForm(initial={
             'product': product,
@@ -870,7 +870,7 @@ def sb_remove_id(request,code, pid):
     if request.POST:     
         try:
             #todo: if client has ordered next month of product, you are not allowed to remove it. unless refund...
-            nextmonth = getNextMonthRange()
+            nextmonth = getCurrentMonthRange()
             startdate = nextmonth[0]
             enddate = nextmonth[1]
 
@@ -943,7 +943,7 @@ def getbillcheckCustomers(code):
         logger.info('startdate:{}, enddate:{}'.format(startdate.strftime('%Y-%m-%d'), enddate.strftime('%Y-%m-%d')))
         porders = Product_Order.objects.filter(product__code =code,  validFrom__lte=startdate, validTo__gte=enddate,customer__in=customers)
 
-        nextmonth = getNextMonthRange()
+        nextmonth = getCurrentMonthRange()
         snextmonth = nextmonth[0]
         enextmonth = nextmonth[1]
         for c in customers:
@@ -998,14 +998,11 @@ def sb_billcheck_all(request):
         month = today.month
         title = f'{month}月对账'
 
-        #check all product records in current month 
-        startDate = date(today.year, today.month, 1)
-        endDate = date(today.year, today.month, monthrange(today.year, today.month)[1])
+        #check all product records in previous month 
+        startDate , endDate = getPreviousMonthRange()
         pOrders = Product_Order.objects.filter(validFrom__lte=startDate, validTo__gte=endDate, customer__status__gt=CustomerStatusCode.Disabled.value)
 
-        nextMonth = getNextMonthRange()
-        startNextMonth = nextMonth[0]
-        endNextMonth = nextMonth[1]
+        startNextMonth , endNextMonth = getCurrentMonthRange()
 
         result = {}
         for p in pOrders:
@@ -1085,7 +1082,7 @@ def sb_billcheck(request, code):
             logger.info('startdate:{}, enddate:{}'.format(startdate.strftime('%Y-%m-%d'), enddate.strftime('%Y-%m-%d')))
             porders = Product_Order.objects.filter(product__code =code,  validFrom__lte=startdate, validTo__gte=enddate,customer__in=customers).order_by('id')
 
-            nextmonth = getNextMonthRange()
+            nextmonth = getCurrentMonthRange()
             snextmonth = nextmonth[0]
             enextmonth = nextmonth[1]
             
