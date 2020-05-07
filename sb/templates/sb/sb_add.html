@@ -91,6 +91,15 @@
                                     {% else %}
                                     <label></label>
                                     {% endif %}
+                                    
+                                    {% if pfield.name == 'product'  %}
+                                        {% if pfield.value == 1 %}
+                                            <input type="checkbox" name="chcbj" id='chcbj'/>
+                                            <label id="lblcbj" name="lblcbj">收取残保金?</label>
+                                            <input type="text" id= "txtcbj" name="txtcbj" hidden />
+                                            {%endif%}
+
+                                    {% endif %}
                                     {% if  dup_date_error  %}
                                         {% if pfield.name == 'validTo'%}
                                         <label style="color: red">{{ dup_date_error }}</label>
@@ -157,3 +166,23 @@
     </div>
 </div>
 {% endblock %}
+
+
+{% block scripts%}
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#chcbj").click(function () {
+            if ($(this).is(":checked")) {
+                $("#lblcbj").text("金额:");
+                $("#txtcbj").show();
+                $("#txtcbj").prop('disabled',false);
+            } else {
+                $("#lblcbj").text("收取残保金?");
+                $("#txtcbj").hide();
+                $("#txtcbj").prop('disabled',true);
+            }
+        });
+    });
+
+</script>
+{%endblock%}

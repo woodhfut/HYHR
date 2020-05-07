@@ -295,6 +295,38 @@ def sb_add(request, code):
                         info = p_cd['note'],
                         isfinished = False
                     )
+
+                if int(code) == ProductCode.SB.value and 'chcbj' in request.POST and 'txtcbj' in request.POST:
+                    cbj =Product.objects.get(code=ProductCode.CBJ.value)
+                    cbj_order, created = Product_Order.objects.get_or_create(
+                    customer=customer, 
+                    product=cbj,
+                    company = company,
+                    validFrom = p_cd['validFrom'],
+                    validTo = p_cd['validTo'],
+                    defaults={
+                        'orderType' : ordertype,
+                        'paymethod' : paymtdName,    
+                        'product_base' : p_cd['product_base'],
+                        'total_price' : request.POST['txtcbj'],
+                        #'payaccount' : p_cd['payaccount'],
+                        #'orderDate' : p_cd['orderDate'],
+                        'note' : p_cd['note']
+                        },
+                    )
+                    if not created and existedCuStatus != CustomerStatusCode.Disabled.value:
+                        return render(request, 'sb/sb_add.html',
+                        {
+                            'title':title,
+                            'customer_form':customer_form,
+                            'p_order_form': p_order_form,
+                            's_order_form': s_order_form,
+                            'dup_date_error':'错误:此时间段已经存在{}订单.'.format(cbj.name),
+                                    
+                        })
+                    else:
+                        customer.status |= ProductCode.CBJ.value
+                
                 service = Service.objects.get(code=ServiceCode.FEE.value)
                 s_order, created = Service_Order.objects.get_or_create(
                     customer = customer,
