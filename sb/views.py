@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import user_passes_test, permission_required
 from django.db import transaction
 from .forms import QueryForm, CustomerForm, Product_OrderForm, Service_OrderForm, OperationQueryForm
 from .models import Product_Order, Customer, Product, Service_Order, Partner, OrderType, District, \
-                    Operations, User_extra_info, TodoList, Service
+                    Operations, User_extra_info, TodoList, Service, Company
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .Utils import ProductCode, CustomerStatusCode, CustomerOperations, SendPushMessage,\
      getNextMonthRange, BillCheckAllResult, ServiceCode, getServiceMonthRange, getPreviousMonthRange, getCurrentMonthRange
@@ -61,7 +61,7 @@ def export_query_csv_thread(request, rst_list, itemType):
             if itemType == 0: #Product order
                 writer.writerow(['姓名', '身份证号', '手机号', '业务名称','业务类型', '所在区县', '户口性质', '基数', '总价','开始日期', '截至日期', '下单日期', '状态'])
                 for rst in rst_list:               
-                    item = [rst.customer.name, '"'+rst.customer.pid+'"', rst.customer.phone, rst.product.name, rst.orderType.name, rst.district.name, rst.customer.get_hukou_display(), rst.product_base, rst.total_price, rst.validFrom, rst.validTo, rst.orderDate, rst.customer.status]
+                    item = [rst.customer.name, '"'+rst.customer.pid+'"', rst.customer.phone, rst.product.name, rst.orderType.name, rst.company.district.name, rst.customer.get_hukou_display(), rst.product_base, rst.total_price, rst.validFrom, rst.validTo, rst.orderDate, rst.customer.status]
                     writer.writerow(item)
             elif itemType == 1: #service order
                 writer.writerow(['姓名', '身份证号', '手机号', '业务名称', '户口性质', '总价','开始日期', '截至日期', '下单日期', '状态'])
@@ -260,14 +260,14 @@ def sb_add(request, code):
                 otName = p_cd['orderType']
                 ordertype = OrderType.objects.get(name=otName)
 
-                dstName = p_cd['district']
-                district = District.objects.get(name=dstName)
+                comName = p_cd['company']
+                company = Company.objects.get(name=comName)
                 paymtdName = p_cd['paymethod']
 
                 p_order, created = Product_Order.objects.get_or_create(
                     customer=customer, 
                     product=product,
-                    district = district,
+                    company = company,
                     validFrom = p_cd['validFrom'],
                     validTo = p_cd['validTo'],
                     defaults={
@@ -404,8 +404,8 @@ def sb_reorder_all(request,pid, data):
                 for form in formset:
                     if form.is_valid():
                         p_cd = form.cleaned_data
-                        dstName = p_cd['district']
-                        district = District.objects.get(name= dstName)
+                        comName = p_cd['company']
+                        company = Company.objects.get(name= comName)
                         productName = p_cd['product']
                         product = Product.objects.get(name=productName)
                         validTo = p_cd['validTo']
@@ -417,7 +417,7 @@ def sb_reorder_all(request,pid, data):
                                 product=product,
                                 validFrom = p_cd['validFrom'],
                                 validTo = validTo,
-                                district = district,
+                                company = company,
                                 defaults={
                                     'product_base' : p_cd['product_base'],
                                     'total_price' : p_cd['total_price'],
@@ -589,8 +589,8 @@ def sb_reorder(request,code,pid):
             p_cd = p_order_form.cleaned_data
             try:
                 paymtd = p_cd['paymethod']
-                dstName = p_cd['district']
-                district = District.objects.get(name= dstName)
+                comName = p_cd['company']
+                company = Company.objects.get(name= comName)
 
                 validTo = p_cd['validTo']
                 lastDay = monthrange(validTo.year, validTo.month)[1]
@@ -602,7 +602,7 @@ def sb_reorder(request,code,pid):
                         product=product,
                         validFrom = p_cd['validFrom'],
                         validTo = validTo,
-                        district = district,
+                        company = company,
                         defaults={
                             'product_base' : p_cd['product_base'],
                             'total_price' : p_cd['total_price'],
@@ -963,9 +963,9 @@ def export_billcheck_csv_thread(request, rst_list):
         with open(os.path.join(settings.STATICFILES_DIRS[0],'HYHR/{}'.format(filename)), 'w', encoding='utf-8-sig', newline='') as f:
             writer = csv.writer(f) 
             
-            writer.writerow(['姓名', '身份证号', '手机号','微信', '业务名称', '所在区县','户口性质','基数','状态'])
+            writer.writerow(['姓名', '身份证号', '手机号', '业务名称', '所在区县','户口性质','基数','状态'])
             for rst in rst_list:               
-                item = [rst.customer.name, '"' +rst.customer.pid+'"', rst.customer.phone, rst.customer.wechat, rst.product.name, rst.district, rst.customer.get_hukou_display(),rst.product_base, rst.customer.status]
+                item = [rst.customer.name, '"' +rst.customer.pid+'"', rst.customer.phone,  rst.product.name, rst.company.district, rst.customer.get_hukou_display(),rst.product_base, rst.customer.status]
                 writer.writerow(item)
            
     except Exception as ex:
@@ -1005,6 +1005,7 @@ def sb_billcheck_all(request):
         startNextMonth , endNextMonth = getCurrentMonthRange()
 
         result = {}
+        fee ={}
         for p in pOrders:
             if Product_Order.objects.filter(customer__pid=p.customer.pid, validTo__gte=endNextMonth, product__code=p.product.code).exists():
                 continue
@@ -1018,10 +1019,11 @@ def sb_billcheck_all(request):
                 result[p.customer.name].records[pos] = p.total_price
                 result[p.customer.name].records[-1] = round(result[p.customer.name].records[-1]+p.total_price, 2)
         
-            if not Service_Order.objects.filter(customer__pid=p.customer.pid, svalidFrom__lte=startNextMonth, svalidTo__gte=endNextMonth, customer__status__gt=CustomerStatusCode.Disabled.value).exists():
+            if p.customer.name not in fee and  not Service_Order.objects.filter(customer__pid=p.customer.pid, svalidFrom__lte=startNextMonth, svalidTo__gte=endNextMonth, customer__status__gt=CustomerStatusCode.Disabled.value).exists():
                 lastRec = Service_Order.objects.filter(customer__pid=p.customer.pid).order_by('-id')[0]
                 result[p.customer.name].records[-2] = lastRec.stotal_price
                 result[p.customer.name].records[-1] = round(result[p.customer.name].records[-1] + lastRec.stotal_price, 2)
+                fee[p.customer.name] = True
         
         records = [v for v in result.values()]
         if len(records) == 0:
@@ -1077,8 +1079,7 @@ def sb_billcheck(request, code):
         customers =[c for c in Customer.objects.filter(status__gt = CustomerStatusCode.Disabled.value) if c.status & product.code == product.code]
 
         if len(customers):
-            startdate = date(today.year, today.month, 1)
-            enddate = date(today.year, today.month, monthrange(today.year, today.month)[1])
+            startdate, enddate = getPreviousMonthRange()
             logger.info('startdate:{}, enddate:{}'.format(startdate.strftime('%Y-%m-%d'), enddate.strftime('%Y-%m-%d')))
             porders = Product_Order.objects.filter(product__code =code,  validFrom__lte=startdate, validTo__gte=enddate,customer__in=customers).order_by('id')
 

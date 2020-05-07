@@ -154,7 +154,7 @@ class Product_Order(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, verbose_name='客户姓名')
     product = models.ForeignKey(Product, on_delete = models.CASCADE, verbose_name='产品名称')
     orderType = models.ForeignKey(OrderType, on_delete= models.CASCADE, default = 1, verbose_name='订单类型')
-    district = models.ForeignKey(District, on_delete = models.CASCADE, default = 1, verbose_name='所属区县')
+    #district = models.ForeignKey(District, on_delete = models.CASCADE, default = 1, verbose_name='所属区县')
     company = models.ForeignKey(Company, on_delete= models.CASCADE, default=1, verbose_name='所属公司')
     product_base = models.FloatField(verbose_name='产品基数')
     validFrom = models.DateField(verbose_name='起始日期')
