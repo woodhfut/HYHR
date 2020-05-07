@@ -1007,7 +1007,7 @@ def sb_billcheck_all(request):
         result = {}
         fee ={}
         for p in pOrders:
-            if Product_Order.objects.filter(customer__pid=p.customer.pid, validTo__gte=endNextMonth, product__code=p.product.code).exists():
+            if p.customer.status & p.product.code != p.product.code or Product_Order.objects.filter(customer__pid=p.customer.pid, validTo__gte=endNextMonth, product__code=p.product.code).exists():
                 continue
             pos = int(math.log2(p.product.code))
             if p.customer.name not in result:
