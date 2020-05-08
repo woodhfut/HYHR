@@ -128,7 +128,6 @@
     <div class="form-group">
         <div class="col-sm-offset-1 col-sm-10">
     <h3>新增服务费</h3>
-
             <label for="chkServiceFee">
                 <input type="checkbox" name ="chkServiceFee" id="chkServiceFee" />
                 暂不缴服务费
@@ -199,7 +198,7 @@
     $(document).ready(function () {
         $("#chcbj").click(function () {
             if ($(this).is(":checked")) {
-                $("#lblcbj").text("金额:");
+                $("#lblcbj").text("残保金金额:");
                 $("#txtcbj").show();
                 $("#txtcbj").prop('disabled',false);
             } else {
@@ -216,6 +215,23 @@
             } else {
                 $("#serivceFeeDiv").show();
                 $("#serivceFeeDiv *").prop('disabled',false);
+            }
+        });
+
+        $("#id_product").change(function(){
+            if($(this).val() != 1)
+            {
+                $("#chcbj").hide();
+                $("#chcbj").prop('disabled', true);
+                $("#lblcbj").hide();
+                $("#lblcbj").prop('disabled', true);
+            }
+            else
+            {
+                $("#chcbj").show();
+                $("#chcbj").prop('disabled', false);
+                $("#lblcbj").show();
+                $("#lblcbj").prop('disabled', false);
             }
         });
     });
