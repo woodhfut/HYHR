@@ -9,6 +9,7 @@ import asyncio
 from multiprocessing.pool import ThreadPool
 from random import randint
 import logging
+from .Utils import saveScopeSession
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 class WebchatBroadcastConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
-        self.scope['session'].save()
+        await saveScopeSession(self.scope)
         await self.accept()
     
     async def close(self, code):

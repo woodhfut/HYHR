@@ -11,6 +11,7 @@ from collections import OrderedDict
 from django.conf import settings
 import os
 import platform
+from asgiref.sync import sync_to_async
 import logging
 
 logger = logging.getLogger(__name__)
@@ -48,6 +49,10 @@ class BillCheckAllResult:
         self.customer = customer
         self.records = records
         
+@sync_to_async
+def saveScopeSession(scope):
+    scope['session'].save()
+
 def getPreviousMonthRange(dt = date.today()):
     today = dt
     if today.month > 1:
