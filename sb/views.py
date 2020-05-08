@@ -578,9 +578,9 @@ def sb_reorder_all(request,pid, data):
                         })           
             
             formset = Product_OrderFormSet(initial=inits)
-            s_latest_rec = None
-            if data[-2]!=0:
-                s_latest_rec = Service_Order.objects.filter(customer__pid__iexact=pid, service__code=ServiceCode.FEE.value).order_by('-id')[0]
+            s_latest_rec = Service_Order.objects.filter(customer__pid__iexact=pid, service__code=ServiceCode.FEE.value).order_by('-id')[0]
+            if data[-2]!=0 or s_latest_rec.stotal_price == 0: #0 for those don't pay service fee.
+                #s_latest_rec = Service_Order.objects.filter(customer__pid__iexact=pid, service__code=ServiceCode.FEE.value).order_by('-id')[0]
                 nextServiceRange = getServiceMonthRange(pid, ServiceCode.FEE.value)
                 
                 s_order = Service_OrderForm(initial={
