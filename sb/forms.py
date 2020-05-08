@@ -28,7 +28,7 @@ class CustomerForm(ModelForm):
             }
 
         widgets={
-            'note': Textarea(attrs={'cols': 100, 'rows': 5})
+            'note': Textarea(attrs={'cols': 100, 'rows': 1})
         }
     def clean_pid(self):
         id = self.cleaned_data.get('pid',None)
@@ -92,7 +92,7 @@ class Product_OrderForm(ModelForm):
                 'validFrom':AdminDateWidget({'placeholder':'开始日期.'}),
                 'validTo': AdminDateWidget({'placeholder':'结束日期.'}),
                 'orderDate': AdminDateWidget({'placeholder': 'Order date.'}),
-                'note': Textarea(attrs={'cols': 100, 'rows': 5})
+                'note': Textarea(attrs={'cols': 100, 'rows': 1})
             }
 
 class Service_OrderForm(ModelForm):
@@ -129,7 +129,7 @@ class Service_OrderForm(ModelForm):
                 'svalidFrom':AdminDateWidget({'placeholder':'开始日期.'}),
                 'svalidTo': AdminDateWidget({'placeholder':'结束日期.'}),
                 'orderDate': AdminDateWidget({'placeholder': '缴纳日期.'}),
-                'snote': Textarea(attrs={'cols': 100, 'rows': 5})
+                'snote': Textarea(attrs={'cols': 100, 'rows': 1})
             } 
         
 class QueryForm(forms.Form):

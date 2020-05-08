@@ -41,9 +41,11 @@
                                 </div>
                             </div>
                     {%else%}
+                        {% if forloop.counter|divisibleby:2 %}
                         <div class="form-group">
+                        {%endif%}
                                 <label class="col-sm-2 control-label" >{{cfield.label_tag}}</label>
-                                <div class="col-sm-10">
+                                <div class="col-sm-4">
                                     {{ cfield }}
                                     {% if cfield.field.required %}
                                     <label style="color: red">*</label>
@@ -59,7 +61,9 @@
                                         <label class="help-tooltip"><small>{{ cfield.help_text }}</small></label>
                                     {% endif %}
                                 </div>
-                            </div>
+                        {% if forloop.counter|divisibleby:2 %}
+                        </div>
+                        {%endif%}
                     {%endif%}
 
                 {%endfor%}
@@ -82,9 +86,11 @@
                                 </div>
                             </div>
                     {%else%}
-                        <div class="form-group">
+                        {% if forloop.counter|divisibleby:2 %}
+                            <div class="form-group">
+                        {%endif%}
                                 <label class="col-sm-2 control-label" >{{pfield.label_tag}}</label>
-                                <div class="col-sm-10">
+                                <div class="col-sm-4">
                                     {{ pfield }}
                                     {% if pfield.field.required %}
                                     <label style="color: red">*</label>
@@ -109,13 +115,28 @@
                                         <label class="help-inline"><small>{{ pfield.help_text }}</small></label>
                                     {% endif %}
                                 </div>
+                        {% if forloop.counter|divisibleby:2%}
                             </div>
+                        {%endif%}
                     {%endif%}
 
                 {%endfor%}
             </div>
             <hr />
-            <div class="form-group">
+            <br/>
+    {% if s_order_form%}
+    <div class="form-group">
+        <div class="col-sm-offset-1 col-sm-10">
+    <h3>新增服务费</h3>
+
+            <label for="chkServiceFee">
+                <input type="checkbox" name ="chkServiceFee" id="chkServiceFee" />
+                暂不缴服务费
+            </label>
+        </div>
+    </div>
+
+            <div class="form-group" name="serivceFeeDiv" id="serivceFeeDiv">
                 <div class="col-sm-offset-1 col-sm-10">
                     <h3>服务费信息: </h3>
                 </div>
@@ -132,9 +153,11 @@
                                 </div>
                             </div>
                     {%else%}
+                        {% if forloop.counter|divisibleby:2 %}
                         <div class="form-group">
+                        {%endif%}
                                 <label class="col-sm-2 control-label" >{{sfield.label_tag}}</label>
-                                <div class="col-sm-10">
+                                <div class="col-sm-4">
                                     {{ sfield }}
                                     {% if sfield.field.required %}
                                     <label style="color: red">*</label>
@@ -150,11 +173,14 @@
                                         <label class="help-inline"><small>{{ sfield.help_text }}</small></label>
                                     {% endif %}
                                 </div>
+                            {% if forloop.counter|divisibleby:2 %}
                             </div>
+                            {%endif%}
                     {%endif%}
 
                 {%endfor%}
             </div>
+    {%endif%}
             <div class="row">
                 <div class="form-group">
                     <div class="col-sm-offset-1 col-sm-10">
@@ -180,6 +206,16 @@
                 $("#lblcbj").text("收取残保金?");
                 $("#txtcbj").hide();
                 $("#txtcbj").prop('disabled',true);
+            }
+        });
+
+        $("#chkServiceFee").click(function () {
+            if ($(this).is(":checked")) {
+                $("#serivceFeeDiv").hide();
+                $("#serivceFeeDiv *").prop('disabled',true);
+            } else {
+                $("#serivceFeeDiv").show();
+                $("#serivceFeeDiv *").prop('disabled',false);
             }
         });
     });

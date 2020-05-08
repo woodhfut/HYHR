@@ -33,9 +33,11 @@
                 </div>
             </div>
     {%else%}
+    {% if forloop.counter|divisibleby:2 %}
         <div class="form-group">
+    {%endif%}
                 <label class="col-sm-2 control-label" >{{ofield.label_tag}}</label>
-                <div class="col-sm-10">
+                <div class="col-sm-4">
                     {{ ofield }}
                     {% if ofield.field.required %}
                     <label style="color: red">*</label>
@@ -46,7 +48,9 @@
                         <label class="help-inline"><small>{{ ofield.help_text }}</small></label>
                     {% endif %}
                 </div>
+            {% if forloop.counter|divisibleby:2 %}
             </div>
+            {%endif%}
     {%endif%}
 
 {%endfor%}
@@ -54,6 +58,8 @@
 <hr />
 <br/>
 {% if s_order_form%}
+<div class="form-group">
+    <div class="col-sm-offset-1 col-sm-10">
 <h3>服务费续费</h3>
 {% if latestsvcRec %}
 <h4 style="color:skyblue">注意：客户{{latestsvcRec.customer.name}}服务费已交至 {{latestsvcRec.svalidTo}}</h4>
@@ -66,7 +72,9 @@
     <input type="checkbox" name ="chkServiceFee" id="chkServiceFee" />
     暂不缴服务费
 </label>
-<hr/>
+</div>
+</div>
+
 <br/>
 <div id="serivceFeeDiv">
 {% for sfield in s_order_form %}
@@ -81,9 +89,11 @@
                 </div>
             </div>
     {%else%}
+    {% if forloop.counter|divisibleby:2 %}
         <div class="form-group">
+            {%endif%}
                 <label class="col-sm-2 control-label" >{{sfield.label_tag}}</label>
-                <div class="col-sm-10">
+                <div class="col-sm-4">
                     {{ sfield }}
                     {% if sfield.field.required %}
                     <label style="color: red">*</label>
@@ -94,7 +104,9 @@
                         <label class="help-inline"><small>{{ sfield.help_text }}</small></label>
                     {% endif %}
                 </div>
+                {% if forloop.counter|divisibleby:2 %}
             </div>
+            {%endif%}
     {%endif%}
 {%endfor%}
 </div>

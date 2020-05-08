@@ -224,11 +224,11 @@ def sb_add(request, code):
     if request.POST:
         customer_form = CustomerForm(request.POST)
         p_order_form = Product_OrderForm(request.POST)
-        s_order_form = Service_OrderForm(request.POST)
-        if customer_form.is_valid() and p_order_form.is_valid() and s_order_form.is_valid():
+        s_order_form = Service_OrderForm(request.POST) if 'chkServiceFee' not in request.POST else None
+        if customer_form.is_valid() and p_order_form.is_valid() and (s_order_form== None or s_order_form.is_valid()):
             c_cd = customer_form.cleaned_data
             p_cd = p_order_form.cleaned_data
-            s_cd = s_order_form.cleaned_data
+            #s_cd = s_order_form.cleaned_data
             try:   
                 existedCuStatus = int(code)
                 customer, created = Customer.objects.get_or_create(
@@ -327,38 +327,40 @@ def sb_add(request, code):
                     else:
                         customer.status |= ProductCode.CBJ.value
                 
-                service = Service.objects.get(code=ServiceCode.FEE.value)
-                s_order, created = Service_Order.objects.get_or_create(
-                    customer = customer,
-                    service = service,
-                    svalidFrom = s_cd['svalidFrom'],
-                    svalidTo = s_cd['svalidTo'], 
-                    defaults={
-                        'stotal_price': s_cd['stotal_price'], 
-                        'sprice2Partner': s_cd['sprice2Partner'],
-                        'snote' : s_cd['snote'],
-                        'paymethod' : s_cd['paymethod'],
-                        #'payaccount' : s_cd['payaccount'],
-                        #'orderDate' : p_cd['orderDate'],
-                        'partner': s_cd['partner'],
-                    },
-                )
-
-                if not created and existedCuStatus != CustomerStatusCode.Disabled.value:
-                    return render(request, 'sb/sb_add.html',
-                    {
-                        'title':title,
-                        'customer_form':customer_form,
-                        'p_order_form': p_order_form,
-                        's_order_form': s_order_form,
-                        'dup_sdate_error':'错误:此时间段已经存在{}订单.'.format(service.name),
-                                
-                    })
-                if s_cd['snote']:
-                    stodo,created = TodoList.objects.get_or_create(
-                        info = s_cd['snote'],
-                        isfinished = False
+                if 'chkServiceFee' not in request.POST:
+                    s_cd = s_order_form.cleaned_data
+                    service = Service.objects.get(code=ServiceCode.FEE.value)
+                    s_order, created = Service_Order.objects.get_or_create(
+                        customer = customer,
+                        service = service,
+                        svalidFrom = s_cd['svalidFrom'],
+                        svalidTo = s_cd['svalidTo'], 
+                        defaults={
+                            'stotal_price': s_cd['stotal_price'], 
+                            'sprice2Partner': s_cd['sprice2Partner'],
+                            'snote' : s_cd['snote'],
+                            'paymethod' : s_cd['paymethod'],
+                            #'payaccount' : s_cd['payaccount'],
+                            #'orderDate' : p_cd['orderDate'],
+                            'partner': s_cd['partner'],
+                        },
                     )
+
+                    if not created and existedCuStatus != CustomerStatusCode.Disabled.value:
+                        return render(request, 'sb/sb_add.html',
+                        {
+                            'title':title,
+                            'customer_form':customer_form,
+                            'p_order_form': p_order_form,
+                            's_order_form': s_order_form,
+                            'dup_sdate_error':'错误:此时间段已经存在{}订单.'.format(service.name),
+                                    
+                        })
+                    if s_cd['snote']:
+                        stodo,created = TodoList.objects.get_or_create(
+                            info = s_cd['snote'],
+                            isfinished = False
+                        )
 
                 #add info to operations table
                 op = Operations(customer = customer, 
@@ -370,10 +372,12 @@ def sb_add(request, code):
                     customer.save()
                     if p_cd['note']:
                         ptodo.save()
-                    if s_cd['snote']:
-                        stodo.save()
+                    if 'chkServiceFee' not in request.POST:
+                        if s_cd['snote']:
+                            stodo.save()
+                        s_order.save()
                     p_order.save()
-                    s_order.save()
+
                     
             except Exception as ex:
                 return render(request, 'HYHR/error.html',
