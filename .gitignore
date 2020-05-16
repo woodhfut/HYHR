@@ -8,3 +8,8 @@ sb/Book.xlsx
 *.sqlite3
 sb/~$Book.xlsx
 .vscode/settings.json
+sb/migrations
+.vscode/settings.json
+db.sqlite3
+*.crt
+db.sqlite3.org
